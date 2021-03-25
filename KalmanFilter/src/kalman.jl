@@ -13,25 +13,7 @@ struct ObservedState{T} #< State
 end
 
 ################################################################################
-#= Actualizadores del sistema
-El tipo abstracto `KalmanUpdater` está pensado como una interfaz a las estructuras
-que permitan actualizar el sistema desde un estado ``x_{n}`` a un estado
-``x_{n+1}``. Se espera que sean, o bien lineales de la forma
-``
-x_{n+1} = M_n x_n + B_n u_n + F_n N_n
-``
-o bien, en caso de ser no lineales ``x_{n+1} = \mathcal{M}(x_n, u_n)``, que
-puedan ser linealizados a la forma anterior.
-Se espera que tengan la siguiente interfaz:
-`update!(L::KalmanUpdater, hatx, control)`: un método que permita actualizar al
-iterador y dejarlo listo para la siguiente iteración. Cuando se usan matrices
-``M_n := M, B_n := B, F_n:= F`` contantes se puede dejar en blanco, pero debería
-usarse, por ejemplo, para linearlizar en torno a ``\hat{x}_n`` cuando se usa
-un `KalmanUpdater` no lineal.
-- `Mn`, `Bn`, `Fn` de la linearización en el estado actual
-- Debe poder ser evaluada en la siguiente firma: `(x::AbstractArray, u::Real, error)`
-=#
-################################################################################
+
 # Interfaz que debe ser definida por las estructuras tipo `KalmanUpdater`.
 abstract type KalmanUpdater end
 function update!(L::KalmanUpdater, hatx, control) error("Updating method not defined") end
@@ -47,11 +29,30 @@ end
 
 #############################################
 # LinearUpdater define la interfaz de KalmanUpdater
-struct LinearUpdater{T} <: KalmanUpdater
+
+"""
+$(TYPEDEF)
+Define un actualizador lineal constante.
+
+Define un actualizador lineal del sistema, que permite calcular el estado ``x_{n+1}``
+a partir del estado ``x_{n}`` y el control ``u_n`` según
+```math
+x_{n+1} = M x_n + B u_n + F N_n
+```
+donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
+``\mathcal{N}(0,1)``).
+# Campos
+$(FIELDS)
+"""
+struct SimpleLinearUpdater{T} <: KalmanUpdater
+  """Matriz ``M``"""
   M::AbstractMatrix{T}
+  """Matriz ``B``"""
   B::AbstractVector{T}
+  """Matriz ``F``"""
   F::AbstractVector{T}
 end
+
 
 function (updater::LinearUpdater)(x::AbstractArray, u::Real, error)
   updater.M * x + updater.B * u + updater.F * error
