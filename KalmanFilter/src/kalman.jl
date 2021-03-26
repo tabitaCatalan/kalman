@@ -1,4 +1,4 @@
-using Random, Distributions
+using Random, Distributions, DocStringExtensions
 
 #abstract type State end
 
@@ -27,8 +27,8 @@ function (updater::KalmanUpdater)(state::StochasticState, error)
   updater(state.x, state.u, error)
 end
 
-#############################################
-# LinearUpdater define la interfaz de KalmanUpdater
+
+#= LinearUpdater define la interfaz de KalmanUpdater =#
 
 """
 $(TYPEDEF)
@@ -40,9 +40,9 @@ a partir del estado ``x_{n}`` y el control ``u_n`` según
 x_{n+1} = M x_n + B u_n + F N_n
 ```
 donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
-``\mathcal{N}(0,1)``).
+``\\mathcal{N}(0,1)``).
 # Campos
-$(FIELDS)
+$(TYPEDFIELDS)
 """
 struct SimpleLinearUpdater{T} <: KalmanUpdater
   """Matriz ``M``"""
@@ -54,15 +54,15 @@ struct SimpleLinearUpdater{T} <: KalmanUpdater
 end
 
 
-function (updater::LinearUpdater)(x::AbstractArray, u::Real, error)
+function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, error)
   updater.M * x + updater.B * u + updater.F * error
 end
 
-function update!(L::LinearUpdater, hatx, control) end # no necesita actualizarse
+function update!(L::SimpleLinearUpdater, hatx, control) end # no necesita actualizarse
 
-Mn(updater::LinearUpdater) = updater.M
-Bn(updater::LinearUpdater) = updater.B
-Fn(updater::LinearUpdater) = updater.F
+Mn(updater::SimpleLinearUpdater) = updater.M
+Bn(updater::SimpleLinearUpdater) = updater.B
+Fn(updater::SimpleLinearUpdater) = updater.F
 
 ################################################################################
 #= Observadores

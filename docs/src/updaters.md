@@ -1,4 +1,4 @@
-# Actualizadores del sistema
+# Actualizar el sistema: KalmanUpdater
 
 El tipo abstracto `KalmanUpdater` está pensado como una interfaz a las estructuras que permitan actualizar el sistema desde un estado ``x_{n}`` a un estado ``x_{n+1}``. Se espera que sean, o bien lineales de la forma
 
@@ -16,4 +16,15 @@ Métodos a implementar | Breve descripción
 `Mn`, `Bn`, `Fn`| De la linearización en el estado actual
 `(::KalmanUpdater)(x::AbstractArray, u::Real, error)` | Debe poder evaluarse en esa firma. Por ejemplo, para el caso no lineal, `udpater(x,u,ε)` podría devolver ``\mathcal{M}(x,u) + Fε``.
 
-##
+## SimpleLinearUpdater
+
+```@docs
+SimpleLinearUpdater
+```
+
+## NLUpdater
+
+```@docs
+NLUpdater
+```
+

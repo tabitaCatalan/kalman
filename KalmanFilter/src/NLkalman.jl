@@ -4,32 +4,50 @@ Código que extiende a kalman.jl, para incorporar Updaters no lineales
 
 using LinearAlgebra
 
-
-################################################################################
-#= Discretizadores
-El tipo abstracto Discretizer está pensado como una interfaz a las estructuras
-que permitan trabajar con un sistema continuo (como una EDO) y transformarolo
-en uno discreto. Esto se hace mediante métodos numéricos como Euler progresivo
-y Runge Kutta de orden 4 (los ejemplos presentes).
-=#
-################################################################################
-
-
 abstract type Discretizer end
 
-function (::Discretizer) error("No se ha definido un método para este discretizador.") end
+function (::Discretizer)(x,α) error("No se ha definido un método para este discretizador.") end
 function jacobian_x(ds::Discretizer, x, α) error("No se ha definido un método para este discretizador.")  end
 
+"""
+$(TYPEDEF)
+Define un `Discretizer` usando el método de Euler
+# Campos
+$(FIELDS)
+"""
 struct Euler <: Discretizer
-  gamma
+  """
+  La función tal que ``x' = f(x,\\alpha, p)``, donde ``x`` es el estado,
+  ``\\alpha `` un control, y ``p`` son parámetros extra.
+  """
+  f
+  """``D_x f (x,\\alpha, p)``, el diferencial de ``f`` con respecto a ``x``."""
+  Dxf
+  """Parámetros extra ``p``."""
+  p
+  """Tamaño del paso temporal ``\\Delta t``, tal que ``t_{n+1} = t_n + \\Delta t``."""
   dt
-  sistema
-  jacobiano
 end
 
-(eu::Euler)(x, α) = x + eu.dt * eu.sistema(x, α , eu.gamma)
-jacobian_x(eu::Euler, x, α) = I + eu.dt * eu.jacobiano(x, α, eu.gamma)
+(eu::Euler)(x, α) = x + eu.dt * eu.f(x, α , eu.p)
+jacobian_x(eu::Euler, x, α) = I + eu.dt * eu.Dxf(x, α, eu.p)
 
+
+
+"""
+$(TYPEDEF)
+
+Define un actualizador posiblemente no lineal del sistema, a partir de la
+discretización de una Ecuación Diferencial Ordinaria. Esto permite calcular el
+estado ``x_{n+1}`` a partir del estado ``x_{n}`` y el control ``u_n`` según
+```math
+x_{n+1} = \\mathcal{M}(x_n, u_n) + F N_n
+```
+donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
+``\\mathcal{N}(0,1)``) y ``\\mathcal{M}`` está dada por un `Discretizer`.
+# Argumentos
+$(TYPEDSIGNATURES)
+"""
 struct RK4 <: Discretizer
   gamma
   dt
@@ -70,10 +88,25 @@ end
 
 #########################
 
+"""
+$(TYPEDEF)
+Define un actualizador dado por la discretización de una ODE.
+
+Define un actualizador posiblemente no lineal del sistema, a partir de la
+discretización de una Ecuación Diferencial Ordinaria. Esto permite calcular el
+estado ``x_{n+1}`` a partir del estado ``x_{n}`` y el control ``u_n`` según
+```math
+x_{n+1} = \\mathcal{M}(x_n, u_n) + F N_n
+```
+donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
+``\\mathcal{N}(0,1)``) y ``\\mathcal{M}`` está dada por un `Discretizer`.
+# Argumentos
+$(TYPEDSIGNATURES)
+"""
 mutable struct NLUpdater <: KalmanUpdater
   discretizer::Discretizer
   F
-  linear::LinearUpdater
+  linear::SimpleLinearUpdater
   function NLUpdater(discretizer, F, x0, α)
     linear = linearize_x(discretizer, F, x0, α)
     new(discretizer, F, linear)
