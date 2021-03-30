@@ -1,5 +1,4 @@
-include("kalman.jl")
-
+using KalmanFilter
 
 ## Caso autito moviéndose en línea recta
 
@@ -13,38 +12,23 @@ F = [dt*wn/2, wn]
 G = [10.]
 x0 = [0., 0.]
 
+updater = KalmanFilter.SimpleLinearUpdater(M,B,F)
+observer = KalmanFilter.LinearObserver(H,zeros(1),G)
 
-
+iterator = KalmanFilter.LinearKalmanIterator(x0, F*F', updater, observer)
 
 T = 60
 N = Int(T/dt)
-begin
-  observations = Vector{Float64}(undef, N)
-  real_states = Array{Float64, 2}(undef, N, 2)
 
-  updater = LinearUpdater(M, B, F)
-  observer = LinearObserver(H, zeros(1), G)
-  X = StochasticState(x0, 1.)
-  hatX = ObservedState(x0, F * F')
-  iterator = LinearKalmanIterator(X, hatX, updater, observer, F * F', Normal())
 
-  for i in 1:N
-    control = 1.
-    observation = observe_state_system(iterator)
-    previous_step!(iterator, control, observation)
 
-    # Save states
-    observations[i] = observation[1]
-    real_states[i,:] = iterator.X.x
-  end
-end
+observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, N)
+
 
 using Plots
 
 ts = 0.0:dt:(T-dt)
 
-plot(ts, real_states[:,2], title = "Velocidad")
-
-plot(ts, real_states[:,1], title = "Posición", label = "Real")
-
-plot!(ts, observations, label = "Observada")
+plotstate(2, "Velocidad")
+plotstate(1, "Posición")
+plot!(ts, observations, label = "Observación")

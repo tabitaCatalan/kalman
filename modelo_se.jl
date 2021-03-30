@@ -1,8 +1,8 @@
 #= Modelo SEIIR, pero selo SE (no lineal)
 Modo simple, sin input desconocido =#
 
-include("kalman.jl")
-include("NLKalman.jl")
+using KalmanFilter
+
 ####################
 
 # Modelo
@@ -43,12 +43,13 @@ end
 
 
 #####################################
-#x0 = [100., 10., 0.1, 0.1, 0.1]
+x0 = [100., 10., 0.1, 0.1, 0.1]
 x0 = [7.112808e6, 1046.8508799517147, 0.0, 521.963080420307, 0.0]
-F = 1000. * ones(5)
+F = 100. * ones(5)
 G = [50000.]
 H = [0. 0. 0. 0. 1.]
 dimensions = 5
+
 
 #=
 
@@ -65,67 +66,61 @@ H = [1. 0.]
 dimensions = 2
 =#
 
-rk = RK4(p, dt, episystem_full, epijacobian_full_x)
-eu = Euler(p, dt, episystem_full, epijacobian_full_x)
+rk = KalmanFilter.RK4(episystem_full, epijacobian_full_x, p, dt)
+eu = KalmanFilter.Euler(episystem_full, epijacobian_full_x, p, dt)
 
 ####################
-
 
 T = 40
 N = Int(T/dt)
 
-
-observations = Vector{Float64}(undef, N)
-real_states = Array{Float64, 2}(undef, N, dimensions)
-predictions = Array{Float64, 2}(undef, N, dimensions)
-errors = Array{Float64, 2}(undef, N, dimensions)
+nlupdater = NLUpdater(rk,F,x0,1.)
+observer = KalmanFilter.LinearObserver(H, zeros(1), G)
 
 
-nlupdater = NLUpdater(eu, F, x0, α)
-observer = LinearObserver(H, zeros(1), G)
-X = StochasticState(x0, α)
-hatX = ObservedState(x0, F * F')
-iterator = LinearKalmanIterator(X, hatX, nlupdater, observer, F * F', Normal())
+iterator = KalmanFilter.LinearKalmanIterator(x0,F*F',nlupdater,observer)
 
 
-for i in 1:N
-  control = 1.
-  observation = observe_state_system(iterator)
-  observations[i] = observation[1]
-  real_states[i,:] = iterator.X.x
-  predictions[i,:] = iterator.hatX.hatx
-  errors[i,:] = [iterator.hatX.hatP[j,j] for j in 1:dimensions]
 
-  #iterator.X.x ≈ iterator.hatX.hatx ? print("!") :
-  hatxn = analysed_state(iterator, observation)
+#Juno.@enter KalmanFilter.full_iteration(iterator, N)
 
-
-  # Save states
-
-end
-
+observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, N)
 using Plots
 
 
+function plotstate(state_index, title)
+  i = state_index
+  nans = NaN * ones(dimensions)'
+  errors_forecast_correction = [nans; errors_analysis[1:end-1,:]]
+  forecast_correction = [nans; forecast[1:end-1,:]]
+
+  a_plot = plot(title = title)
+  plot!(a_plot, ts[rango], real_states[rango,i], label = "Real")
+  plot!(a_plot, ts[rango], analysis[rango,i], label = "Kalman analysed", ribbon = sqrt.(abs.(errors_analysis[rango,i])))
+  plot!(a_plot, ts[rango], forecast_correction[rango,i], label = "Kalman forecast", ribbon = sqrt.(abs.(errors_forecast_correction[rango,i])))
+  a_plot
+end
+
 ts = 0.0:dt:(T-dt)
-rango = 1:length(ts)
-plot(ts[rango], real_states[rango,1], title = "Susceptibles", label = "Real")
-plot!(ts[rango], predictions[rango,1], label = "Kalman", ribbon = sqrt.(errors[rango,1]))
+rango = 1:floor(Int,length(ts))
+plotstate(1, "Susceptibles")
+plotstate(2, "Expuestos")
+plotstate(3, "Mild")
+plotstate(4, "Infectados")
+plotstate(5, "Acumulados")
 
-plot(ts[rango], real_states[rango,2], title = "Expuestos", label = "Real")
-plot!(ts[rango], predictions[rango,2], label = "Kalman",  ribbon = sqrt.(errors[rango,2]))
-
-plot(ts[rango], real_states[rango,3], title = "Mild", label = "Real")
-plot!(ts[rango], predictions[rango,3], label = "Kalman",  ribbon = sqrt.(errors[rango,3]))
-
-plot(ts[rango], real_states[rango,4], title = "Infectados", label = "Real")
-plot!(ts[rango], predictions[rango,4], label = "Kalman",  ribbon = sqrt.(errors[rango,4]))
-
-
-plot(ts[rango], real_states[rango,5], title = "Acumulados", label = "Real")
-plot!(ts[rango], predictions[rango,5], label = "Kalman",  ribbon = sqrt.(errors[rango,5]))
 plot!(ts[rango], observations[rango], label = "Observaciones", legend =:bottomright)
 
+function plot_error(state_index, state_name)
+  i = state_index
+  a_plot = plot(title = "Error " * state_name)
+  plot!(a_plot, ts[1:end-1], sqrt.(errors_analysis[2:end,i]), label = "Analysis")
+  plot!(a_plot, ts, sqrt.(errors_forecast[:,i]), label = "Forecast")
+end
+
+plot_error(1, "Susceptibles")
+plot_error(2, "Expuestos")
+plot_error(3, "Mild")
 
 #################################################################
 ### Modelo SEIIR con input α desconocido
@@ -165,3 +160,30 @@ begin
   end
 end
 # una interfaz que permita trabajar con un sistema
+
+
+# Verificar los resultados del discretizador
+using Plots
+x0 = [100., 10., 0., 0., 0.]
+results = Array{Float64, 2}(undef, N, 5)
+xn = x0
+for n in 1:N
+  results[n,:] = xn
+  xn = rk(xn, 1.)
+  if xn[2] < 0
+    print(n)
+    error("x[2] our of domain")
+  end
+end
+
+results[67,:]
+
+plot(results[:,1])
+plot!(results[:,5])
+
+plot(results[:,2])
+plot!(results[:,3])
+plot!(results[:,4])
+
+
+Juno.@enter rk(x0,1.)
