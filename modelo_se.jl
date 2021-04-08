@@ -12,40 +12,22 @@ using KalmanFilter
 γᵢ = 1/5
 φ = 0.4
 =#
-α = 1.881556778828361e-8
+#α = 1.881556778828361e-8
 γₑ = 0.14
 γᵢ = 0.14
 φ = 0.3
+
+include("KalmanFilter\\src\\seii_model.jl")
 
 
 p = (gammae = γₑ, gammai = γᵢ, phi = φ)
 
 dt = 0.2
 
-function episystem_full(x, α, p)
-  γᵢ = p.gammai; γₑ = p.gammae; φ = p.phi;
-  β = 1e-7
-  [-α * β * x[1] * (x[2] + x[3]),
-  α * β * x[1] * (x[2] + x[3]) - γₑ * x[2],
-  (1 - φ) * γₑ * x[2] - γᵢ * x[3],
-  φ * γₑ * x[2] - γᵢ * x[4],
-  φ * γₑ * x[2]]
-end
-function epijacobian_full_x(x, α, p)
-  γᵢ = p.gammai; γₑ = p.gammae; φ = p.phi;
-  β = 1e-7
-  [-α*β*(x[2] + x[3])  -α*β*x[1]     -α*β*x[1]  0.  0.;
-  α*β*(x[2] + x[3])  (α*β*x[1]-γₑ)  α*β*x[1]  0.  0.;
-  0.                 (1-φ)*γₑ       -γᵢ       0.  0.;
-  0.                 φ*γₑ           0.        -γᵢ 0.;
-  0.                 φ*γₑ           0.        0.  0.]
-end
-
-
 #####################################
 x0 = [100., 10., 0.1, 0.1, 0.1]
 x0 = [7.112808e6, 1046.8508799517147, 0.0, 521.963080420307, 0.0]
-F = 100. * ones(5)
+F = 0.1 * ones(5)
 G = [50000.]
 H = [0. 0. 0. 0. 1.]
 dimensions = 5
@@ -66,8 +48,8 @@ H = [1. 0.]
 dimensions = 2
 =#
 
-rk = KalmanFilter.RK4(episystem_full, epijacobian_full_x, p, dt)
-eu = KalmanFilter.Euler(episystem_full, epijacobian_full_x, p, dt)
+rk = KalmanFilter.RK4Dx(episystem_full, epijacobian_full_x, p, dt)
+#eu = KalmanFilter.Euler(episystem_full, epijacobian_full_x, p, dt)
 
 ####################
 
@@ -77,37 +59,40 @@ N = Int(T/dt)
 nlupdater = NLUpdater(rk,F,x0,1.)
 observer = KalmanFilter.LinearObserver(H, zeros(1), G)
 
+control(t, limit) = t <= limit ? 1. : 0.5
 
-iterator = KalmanFilter.LinearKalmanIterator(x0,F*F',nlupdater,observer)
-
-
-
+control(0.1, 12)
 #Juno.@enter KalmanFilter.full_iteration(iterator, N)
-
-observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, N)
+iterator = KalmanFilter.LinearKalmanIterator(x0,F*F',nlupdater,observer)
+observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, dt, N, t -> control(t, 50.))
 using Plots
 
 
-function plotstate(state_index, title)
+function plotstate!(a_plot, state_index, ts, rango = 1:length(ts); labels = ["Real", "Kalman analysed", "Kalman forecast"])
   i = state_index
+  dimensions = size(real_states)[2]
   nans = NaN * ones(dimensions)'
-  errors_forecast_correction = [nans; errors_analysis[1:end-1,:]]
+  errors_forecast_correction = [nans; errors_forecast[1:end-1,:]]
   forecast_correction = [nans; forecast[1:end-1,:]]
+  if i ≠ 6
+    plot!(a_plot, ts[rango], real_states[rango,i], label = labels[1])
+  end
+  #plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2])
 
-  a_plot = plot(title = title)
-  plot!(a_plot, ts[rango], real_states[rango,i], label = "Real")
-  plot!(a_plot, ts[rango], analysis[rango,i], label = "Kalman analysed", ribbon = sqrt.(abs.(errors_analysis[rango,i])))
-  plot!(a_plot, ts[rango], forecast_correction[rango,i], label = "Kalman forecast", ribbon = sqrt.(abs.(errors_forecast_correction[rango,i])))
+  plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2], ribbon = 2 * sqrt.(abs.(errors_analysis[rango,i])))
+  plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2], ribbon = sqrt.(abs.(errors_analysis[rango,i])))
+  #plot!(a_plot, ts[rango], forecast_correction[rango,i], label = labels[3], ribbon = sqrt.(abs.(errors_forecast_correction[rango,i])))
   a_plot
 end
 
 ts = 0.0:dt:(T-dt)
 rango = 1:floor(Int,length(ts))
-plotstate(1, "Susceptibles")
-plotstate(2, "Expuestos")
-plotstate(3, "Mild")
-plotstate(4, "Infectados")
-plotstate(5, "Acumulados")
+a_plot = plot(title = "Susceptibles")
+plotstate!(a_plot, 1, ts)
+plotstate(2, "Expuestos", ts)
+plotstate(3, "Mild", ts)
+plotstate(4, "Infectados", ts)
+plotstate(5, "Acumulados", ts)
 
 plot!(ts[rango], observations[rango], label = "Observaciones", legend =:bottomright)
 
@@ -121,69 +106,3 @@ end
 plot_error(1, "Susceptibles")
 plot_error(2, "Expuestos")
 plot_error(3, "Mild")
-
-#################################################################
-### Modelo SEIIR con input α desconocido
-#################################################################
-
-tildeM = [M B; 0. 0. 1.]
-tildeH = [H 0.]
-
-tildeP = [F * F' zeros(2); 0. 0. 1.]
-
-tildex0 = [x0; 1.]
-
-tildeF = [F; 0.]
-
-tildeF * tildeF'
-tildeG = G
-begin
-  observations2 = Vector{Float64}(undef, N)
-  real_states2 = Array{Float64, 2}(undef, N, 3)
-  predictions2 = Array{Float64, 2}(undef, N, 3)
-
-  updater2 = LinearUpdater(tildeM, zeros(3), tildeF)
-  observer2 = LinearObserver(tildeH, zeros(1), G)
-  X2 = StochasticState(tildex0, 0.)
-  hatX2 = ObservedState(tildex0, tildeP)
-  iterator2 = LinearKalmanIterator(X2, hatX2, updater2, observer2, tildeP, Normal())
-
-  for i in 1:N
-    control = 1.
-    observation = observe_state_system(iterator2)
-    previous_step!(iterator2, control, observation)
-
-    # Save states
-    observations2[i] = observation[1]
-    real_states2[i,:] = iterator2.X.x
-    predictions2[i,:] = iterator2.hatX.hatx
-  end
-end
-# una interfaz que permita trabajar con un sistema
-
-
-# Verificar los resultados del discretizador
-using Plots
-x0 = [100., 10., 0., 0., 0.]
-results = Array{Float64, 2}(undef, N, 5)
-xn = x0
-for n in 1:N
-  results[n,:] = xn
-  xn = rk(xn, 1.)
-  if xn[2] < 0
-    print(n)
-    error("x[2] our of domain")
-  end
-end
-
-results[67,:]
-
-plot(results[:,1])
-plot!(results[:,5])
-
-plot(results[:,2])
-plot!(results[:,3])
-plot!(results[:,4])
-
-
-Juno.@enter rk(x0,1.)

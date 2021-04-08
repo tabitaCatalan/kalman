@@ -15,20 +15,24 @@ x0 = [0., 0.]
 updater = KalmanFilter.SimpleLinearUpdater(M,B,F)
 observer = KalmanFilter.LinearObserver(H,zeros(1),G)
 
-iterator = KalmanFilter.LinearKalmanIterator(x0, F*F', updater, observer)
+
 
 T = 60
 N = Int(T/dt)
 
-
-
-observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, N)
+iterator = KalmanFilter.LinearKalmanIterator(x0, F*F', updater, observer)
+observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, dt, N, t -> 1.)
 
 
 using Plots
 
 ts = 0.0:dt:(T-dt)
 
-plotstate(2, "Velocidad")
-plotstate(1, "Posición")
+
+real_states
+plotstate(2, "Velocidad u=1.0", ts)
+plotstate(1, "Posición u=1.0", ts)
 plot!(ts, observations, label = "Observación")
+
+plot_error(2, "Velocidad")
+plot_error(1, "Posición")

@@ -1,6 +1,6 @@
 #= Qué pasa si no conozco el control? Es como un input desconocido... =#
-
-include("kalman.jl")
+using KalmanFilter
+#include("kalman.jl")
 
 ### Sistema básico
 dt = 0.1

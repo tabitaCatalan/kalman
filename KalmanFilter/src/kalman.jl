@@ -1,134 +1,75 @@
-using Random, Distributions, DocStringExtensions
+using Random, Distributions
 
-#abstract type State end
 
-struct StochasticState{T}# < State
-  x::AbstractVector{T}
-  u::T
-end
+abstract type KalmanIterator end
 
-struct ObservedState{T} #< State
-  hatx::AbstractVector{T}
-  hatP::AbstractMatrix{T}
+"""
+$(TYPEDSIGNATURES)
+
+Permite actualizar un `KalmanIterator` usando una nueva evaluación de un control.
+Requiere que hayan sido definidos los métodos de la interfaz.
+"""
+function next_iteration!(iterator::KalmanIterator, control)
+  # advance real system
+  update_inner_state!(iterator, control)
+
+  forecast_observed_state!(iterator, control) #esto cambia next_hatX
+
+  # observe system
+  yₙ₊₁ = observe_inner_system(iterator)
+
+  # analysis
+  analyse!(iterator, yₙ₊₁)
+
+  update_updater!(iterator)
+
+  yₙ₊₁
 end
 
 ################################################################################
-
-# Interfaz que debe ser definida por las estructuras tipo `KalmanUpdater`.
-abstract type KalmanUpdater end
-function update!(L::KalmanUpdater, hatx, control) error("Updating method not defined") end
-function (updater::KalmanUpdater)(x::AbstractArray, u::Real, error) error("Evaluation method not defined") end
-function Mn(::KalmanUpdater) error("Mn no definida") end
-function Bn(::KalmanUpdater) error("Bn no definida") end
-function Fn(::KalmanUpdater) error("Fn no definida") end
-################################################################################
-
-function (updater::KalmanUpdater)(state::StochasticState, error)
-  updater(state.x, state.u, error)
-end
-
-
-#= LinearUpdater define la interfaz de KalmanUpdater =#
 
 """
 $(TYPEDEF)
-Define un actualizador lineal constante.
 
-Define un actualizador lineal del sistema, que permite calcular el estado ``x_{n+1}``
-a partir del estado ``x_{n}`` y el control ``u_n`` según
-```math
-x_{n+1} = M x_n + B u_n + F N_n
-```
-donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
-``\\mathcal{N}(0,1)``).
+Define un iterator de Kalman que almacena tanto un estado interno (que corresponde
+al sistema real) como un sistema aproximado, el cual es ajustado a partir de
+observaciones del sistema interno.
+
 # Campos
-$(TYPEDFIELDS)
+$(FIELDS)
 """
-struct SimpleLinearUpdater{T} <: KalmanUpdater
-  """Matriz ``M``"""
-  M::AbstractMatrix{T}
-  """Matriz ``B``"""
-  B::AbstractVector{T}
-  """Matriz ``F``"""
-  F::AbstractVector{T}
-end
-
-
-
-function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, error)
-  updater.M * x + updater.B * u + updater.F * error
-end
-
-function update!(L::SimpleLinearUpdater, hatx, control) end # no necesita actualizarse
-
-Mn(updater::SimpleLinearUpdater) = updater.M
-Bn(updater::SimpleLinearUpdater) = updater.B
-Fn(updater::SimpleLinearUpdater) = updater.F
-
-################################################################################
-#= Observadores
-El tipo abstracto `KalmanObserver` está pensado como una interfaz a las estructuras
-que permitan observar el sistema en estado ``x_{n}``, entregando una observación
-``y_{n}``. Se espera que sean, o bien lineales de la forma
-``
-y_{n} = H_n x_n + D_n u_n + G_n N_n
-``
-o bien, en caso de ser no lineales ``y_{n} = \mathcal{H}(x_n, u_n)``, que
-puedan ser linealizados a la forma anterior.
-Se espera que tengan la siguiente interfaz:
-`update!(L::KalmanUpdater, hatx, control)`: un método que permita actualizar al
-iterador y dejarlo listo para la siguiente iteración. Cuando se usan matrices
-``H_n := M, D_n := D, G_n:= G`` contantes se puede dejar en blanco, pero debería
-usarse, por ejemplo, para linearlizar en torno a ``\hat{x}_n`` cuando se usa
-un `KalmanObserver` no lineal.
-- `Hn`, `Dn`, `Gn` de la linearización en el estado actual
-- Debe poder ser evaluado en la siguiente firma: `(x::AbstractArray, u::Real, error)`
-=#
-################################################################################
-
-abstract type KalmanObserver end
-
-struct LinearObserver{T} <: KalmanObserver
-  H::AbstractMatrix{T}
-  D::AbstractVector{T}
-  G::AbstractVector{T}
-end
-
-
-function (observer::LinearObserver)(state, error)
-  observer.H * state.x + observer.D * state.u + observer.G * error
-end
-
-function (observer::LinearObserver)(x,u, error)
-  observer.H * x + observer.D * u + observer.G * error
-end
-
-Hn(observer::LinearObserver) = observer.H
-Dn(observer::LinearObserver) = observer.D
-Gn(observer::LinearObserver) = observer.G
-
-################################################################################
-#= Iterador de Kalman
-La estructura `LinearKalmanIterator` contiene la información tanto del sistema
-estocástico como del sistema determinista dado por las formulas del filtro de
-Kalman.
-Puede ser observado y actualizado.
-=#
-################################################################################
-# No creo que esto sea necesario... o tal vez sí, podría ser útil para definir
-# iteradores que no conozcan el sistema (lo que será útil después, al incorporar
-# la info de los casos reales)
-# abstract type KalmanIterator end
-
-mutable struct LinearKalmanIterator{T} #<: KalmanIterator
+mutable struct LinearKalmanIterator{T} <: KalmanIterator
+  """Número de iteración actual ``n``. Se inicializa en 0."""
   n::Int
+  """Estado interno ``x_n`` y control ``u_{n-1} usado para obtenerla."""
   X::StochasticState{T}
+  """
+  Aproximación del estado interno ``\\hat{x}_{n,n}``, y una estimación de la matriz
+  de covarianzas ``\\hat{P}_{n,n}`` del error ``x_n - \\hat{x}_{n,n}``.
+  """
   hatX::ObservedState{T}
+  """
+  Estimación ``hat{x}_{n,n-1}`` del estado ``x_n`` antes de conocer la observación
+  ``y_n`` (solo contando con información hasta ``y_{n-1}``).
+  """
   next_hatX::ObservedState{T}
+  """`KalmanUpdater` que permite actualizar tanto el estado interno como las aproximaciones."""
   updater::KalmanUpdater
+  """Un observador lineal que entrega observaciones ```y_n`` del estado interno."""
   observer::LinearObserver{T}
   #Pn::AbstractMatrix{T}
+  """Una distribución que permite agregar ruido al sistema. Por defecto es una ``\\mathcal{N}(0,1)``."""
   noiser::UnivariateDistribution
+
+  """
+  $(TYPEDSIGNATURES)
+  Crea un iterador que almacena un estado interno.
+  # Argumentos
+  - `x0`: condición inicial, tanto para el sistema interno como para el observador.
+  - `P0`: matriz de covarianza de la condición inicial.
+  - `updater::KalmanUpdater`: actualizará tanto el sistema interno como el observado.
+  - `observer::KalmanObserver`: permite observar el sistema interno.
+  """
   function LinearKalmanIterator(x0::AbstractVector{T}, P0::AbstractMatrix{T},
       updater::KalmanUpdater,
       observer::KalmanObserver) where T <: Real
@@ -141,28 +82,20 @@ mutable struct LinearKalmanIterator{T} #<: KalmanIterator
   end
 end
 
-
-
-function next_iteration!(iterator, control)
-  # advance real system
+function update_inner_state!(iterator::LinearKalmanIterator, control)
   xₙ₊₁ = next_state_system(iterator, control); uₙ = control
   iterator.X = Xₙ₊₁ = StochasticState(xₙ₊₁, uₙ)
+end
 
-  forecast_observed_state!(iterator, control) #esto cambia next_hatX
 
-  # observe system
-  yₙ₊₁ = observe_state_system(iterator) # hay que actualizar iterator.X primero...
-
-  # analysis
-  hatPₙ₊₁ₙ₊₁ = analyse_hatP(iterator)
-  hatxₙ₊₁ₙ₊₁ = analyse_hatx(iterator, yₙ₊₁)
-
-  iterator.hatX = ObservedState(hatxₙ₊₁ₙ₊₁, hatPₙ₊₁ₙ₊₁)
-
-  update_updater!(iterator)
-
+function advance_counter!(iterator)
   iterator.n = iterator.n + 1
-  yₙ₊₁
+end
+
+function analyse!(iterator, observation)
+  hatPₙ₊₁ₙ₊₁ = analyse_hatP(iterator)
+  hatxₙ₊₁ₙ₊₁ = analyse_hatx(iterator, observation)
+  iterator.hatX = ObservedState(hatxₙ₊₁ₙ₊₁, hatPₙ₊₁ₙ₊₁)
 end
 
 function observe_forecasted_system(iterator)
@@ -207,7 +140,7 @@ KalmanGain(iterator) = KalmanGain(iterator, next_hatP(iterator))
 # Funciones más generales para observar y actualizar el sistema
 
 # Observar
-observe_state_system(iterator) = iterator.observer(iterator.X, rand(iterator.noiser))
+observe_inner_system(iterator) = iterator.observer(iterator.X, rand(iterator.noiser))
 
 function observe_observed_system(iterator)
   tempX = StochasticState(next_hatx(iterator), un(iterator))
@@ -243,7 +176,7 @@ function forecast(iterator, control)
   hatPₙₙ = hatP(iterator)
   K = KalmanGain(iterator, hatPₙₙ)
   E = En(iterator, hatPₙₙ)
-  hatPₙ₊₁ₙ = forecast_hatP(iterator, K, E, hatPₙₙ, control) # idem
+  hatPₙ₊₁ₙ = forecast_hatP(iterator, K, E, hatPₙₙ) # idem
   hatxₙ₊₁ₙ = forecast_hatx(iterator, control) # aun no debe haber cambiado el analizado
   hatxₙ₊₁ₙ, hatPₙ₊₁ₙ
 end
@@ -256,15 +189,15 @@ function forecast_hatx(iterator::LinearKalmanIterator, control)
   forecast_hatx(iterator.updater, hatx(iterator), control)
 end
 
-function forecast_hatP(iterator::LinearKalmanIterator, K, E, hatP, control)
+function forecast_hatP(iterator::LinearKalmanIterator, K, E, hatP)
   Mn(iterator) * hatP * Mn(iterator)' + Qn(iterator)
-    - Sn(iterator) * inv(E) * Sn(iterator)'
-    - Sn(iterator) * K' * Mn(iterator)'
-    - Mn(iterator) * K * Sn(iterator)'
+  #  - Sn(iterator) * inv(E) * Sn(iterator)'
+  #  - Sn(iterator) * K' * Mn(iterator)'
+  #  - Mn(iterator) * K * Sn(iterator)'
 end
 
-function forecast_hatP(iterator::LinearKalmanIterator, control)
-  forecast_hatP(iterator::LinearKalmanIterator, KalmanGain(iterator), En(iterator), hatP(iterator), control)
+function forecast_hatP(iterator::LinearKalmanIterator)
+  forecast_hatP(iterator::LinearKalmanIterator, KalmanGain(iterator), En(iterator), hatP(iterator))
 end
 
 function forecast_observed_state!(iterator, control)
@@ -286,8 +219,11 @@ function analyse_hatP(iterator)
 end
 
 
-
-function full_iteration(iterator, N)
+"""
+# Argumentos
+- `control_function`: control en función del tiempo
+"""
+function full_iteration(iterator, dt, N, control_function)
 
   dimensions = length(xn(iterator))
 
@@ -300,8 +236,8 @@ function full_iteration(iterator, N)
   errors_forecast = Array{Float64, 2}(undef, N, dimensions)
 
   for i in 1:N
-    control = 1.
-    #observation = KalmanFilter.observe_state_system(iterator)
+    control = control_function(i * dt)
+    #observation = KalmanFilter.observe_inner_system(iterator)
 
     real_states[i,:] = KalmanFilter.xn(iterator)
     analysis[i,:] = KalmanFilter.hatx(iterator)
