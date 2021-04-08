@@ -18,3 +18,5 @@ Un ejemplo es
 KalmanFilter.LinearKalmanIterator
 ```
 
+!!! danger "Atención"
+    Hasta ahora es necesario que el usuario cuide que las condiciones iniciales estén correctamente inicializadas tanto en `KalmanObserver` (para el caso en que se guarda un sistema interno) y para `KalmanUpdater` (importa en la linearización inicial de un sistema no lineal).
