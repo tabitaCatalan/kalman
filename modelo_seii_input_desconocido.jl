@@ -63,10 +63,14 @@ function control_pieces(t)
     end
 end
 
+# Veamos un gráfico del control usado, para lo que definimos un vector con los tiempos `ts`.
+ts = 0.0:dt:(T-dt)
+plot(ts, control_pieces.(ts), label = "Control real")
+
 # Definimos las estructuras necesarias para crear un `LinearKalmanIterator`.
 nlupdater = NLUpdater(rk,F,x0,1.)
 nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces)
-observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G)
+observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
 iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer)
 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
@@ -75,8 +79,7 @@ observations, real_states, analysis, forecast, errors_analysis, errors_forecast 
 
 # ## Resultados
 # Graficaremos los estados internos considerados, y los resultados obtenidos.
-# Definimos un vector con los tiempos
-ts = 0.0:dt:(T-dt)
+
 rango = 1:floor(Int,length(ts))
 
 # Definimos unas funciones horribles para acortar el proceso
@@ -104,34 +107,33 @@ function plot_error(state_index, state_name)
   plot!(a_plot, ts, sqrt.(errors_forecast[:,i]), label = "Forecast")
 end
 
-# Y procedemos a graficar
+# Ahora podemos graficar los diferentes estados de nuestro sistema, así como las
+# aproximaciones obtenidas con filtro de Kalman.
 
+# Susceptibles ``S``
 a_plot = plot(title = "Susceptibles")
 plotstate!(a_plot, 1, ts)
 
-a_plot = plot(title = "Infectado")
-plotstate!(a_plot, 4, ts)
-
-#plot_error(1, "Susceptibles")
-
+# Expuestos ``E``
 a_plot = plot(title = "Expuestos")
 plotstate!(a_plot, 2, ts)
 
+# Infectados asintomáticos *mild* ``I^m``
 a_plot = plot(title = "Mild")
 plotstate!(a_plot, 3, ts)
 
+# Infectados ``I``
+a_plot = plot(title = "Infectado")
+plotstate!(a_plot, 4, ts)
 
+# Infectados acumulados ``cI``, y las observaciones que hicimos de él.
+a_plot = plot(title = "Acumulados")
+plotstate!(a_plot, 5, ts)
+plot!(ts[rango], observations[rango], label = "Observaciones", legend =:bottomright)
 
-# Observemos el control obtenido
+# Finalmente, veamos el control usado y el aproximado
 a_plot = plot(title = "Control")
 plot!(ts, control_pieces.(ts), label = "Control real")
 plotstate!(a_plot, 6, ts)
 
 # Notamos que tras una cierta cantidad de tiempo es posible averiguarlo con bastante certeza.
-
-# Podemos ver el estado ``cI``, y las observaciones que hicimos de él.
-a_plot = plot(title = "Acumulados")
-plotstate!(a_plot, 5, ts)
-plot!(ts[rango], observations[rango], label = "Observaciones", legend =:bottomright)
-
-# Salió bien :3

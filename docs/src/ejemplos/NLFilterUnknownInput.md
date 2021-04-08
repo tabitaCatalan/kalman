@@ -170,12 +170,19 @@ function control_pieces(t)
 end
 ```
 
+Veamos un gráfico del control usado, para lo que definimos un vector con los tiempos `ts`.
+
+```@example NLFilterUnknownInput
+ts = 0.0:dt:(T-dt)
+plot(ts, control_pieces.(ts), label = "Control real")
+```
+
 Definimos las estructuras necesarias para crear un `LinearKalmanIterator`.
 
 ```@example NLFilterUnknownInput
 nlupdater = NLUpdater(rk,F,x0,1.)
 nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces)
-observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G)
+observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
 iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer)
 ```
 
@@ -188,10 +195,8 @@ observations, real_states, analysis, forecast, errors_analysis, errors_forecast 
 
 ## Resultados
 Graficaremos los estados internos considerados, y los resultados obtenidos.
-Definimos un vector con los tiempos
 
 ```@example NLFilterUnknownInput
-ts = 0.0:dt:(T-dt)
 rango = 1:floor(Int,length(ts))
 ```
 
@@ -223,25 +228,46 @@ function plot_error(state_index, state_name)
 end
 ```
 
-Y procedemos a graficar
+Ahora podemos graficar los diferentes estados de nuestro sistema, así como las
+aproximaciones obtenidas con filtro de Kalman.
+
+Susceptibles ``S``
 
 ```@example NLFilterUnknownInput
 a_plot = plot(title = "Susceptibles")
 plotstate!(a_plot, 1, ts)
+```
 
-a_plot = plot(title = "Infectado")
-plotstate!(a_plot, 4, ts)
+Expuestos ``E``
 
-#plot_error(1, "Susceptibles")
-
+```@example NLFilterUnknownInput
 a_plot = plot(title = "Expuestos")
 plotstate!(a_plot, 2, ts)
+```
 
+Infectados asintomáticos *mild* ``I^m``
+
+```@example NLFilterUnknownInput
 a_plot = plot(title = "Mild")
 plotstate!(a_plot, 3, ts)
 ```
 
-Observemos el control obtenido
+Infectados ``I``
+
+```@example NLFilterUnknownInput
+a_plot = plot(title = "Infectado")
+plotstate!(a_plot, 4, ts)
+```
+
+Infectados acumulados ``cI``, y las observaciones que hicimos de él.
+
+```@example NLFilterUnknownInput
+a_plot = plot(title = "Acumulados")
+plotstate!(a_plot, 5, ts)
+plot!(ts[rango], observations[rango], label = "Observaciones", legend =:bottomright)
+```
+
+Finalmente, veamos el control usado y el aproximado
 
 ```@example NLFilterUnknownInput
 a_plot = plot(title = "Control")
@@ -250,16 +276,6 @@ plotstate!(a_plot, 6, ts)
 ```
 
 Notamos que tras una cierta cantidad de tiempo es posible averiguarlo con bastante certeza.
-
-Podemos ver el estado ``cI``, y las observaciones que hicimos de él.
-
-```@example NLFilterUnknownInput
-a_plot = plot(title = "Acumulados")
-plotstate!(a_plot, 5, ts)
-plot!(ts[rango], observations[rango], label = "Observaciones", legend =:bottomright)
-```
-
-Salió bien :3
 
 ---
 
