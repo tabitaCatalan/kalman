@@ -41,21 +41,25 @@ $(FIELDS)
 mutable struct LinearKalmanIterator{T} <: KalmanIterator
   """Número de iteración actual ``n``. Se inicializa en 0."""
   n::Int
-  """Estado interno ``x_n`` y control ``u_{n-1} usado para obtenerla."""
-  X::StochasticState{T}
+  #"""Estado interno ``x_n`` y control ``u_{n-1}`` usado para obtenerlo."""
+  #X::StochasticState{T}
+  """Control ``u_{n-1}`` usado para llegar al estado actual"""
+  u::Real
   """
   Aproximación del estado interno ``\\hat{x}_{n,n}``, y una estimación de la matriz
   de covarianzas ``\\hat{P}_{n,n}`` del error ``x_n - \\hat{x}_{n,n}``.
   """
   hatX::ObservedState{T}
   """
-  Estimación ``hat{x}_{n,n-1}`` del estado ``x_n`` antes de conocer la observación
+  Estimación ``\\hat{x}_{n,n-1}`` del estado ``x_n`` antes de conocer la observación
   ``y_n`` (solo contando con información hasta ``y_{n-1}``).
   """
   next_hatX::ObservedState{T}
   """`KalmanUpdater` que permite actualizar tanto el estado interno como las aproximaciones."""
   updater::KalmanUpdater
-  """Un observador lineal que entrega observaciones ```y_n`` del estado interno."""
+  """
+  Un observador lineal que entrega observaciones ``y_n`` del estado real.
+  """
   observer::LinearObserver{T}
   #Pn::AbstractMatrix{T}
   """Una distribución que permite agregar ruido al sistema. Por defecto es una ``\\mathcal{N}(0,1)``."""
@@ -74,17 +78,20 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
       updater::KalmanUpdater,
       observer::KalmanObserver) where T <: Real
     n = 0
-    X = StochasticState(x0, 0.)
+    #X = StochasticState(x0, 0.)
     hatX = ObservedState(x0, P0)
     next_hatX = ObservedState(x0, P0)
     noiser = Normal()
-    new{T}(n, X, hatX, next_hatX, updater, observer, noiser)
+    new{T}(n, 1., hatX, next_hatX, updater, observer, noiser)
   end
 end
 
 function update_inner_state!(iterator::LinearKalmanIterator, control)
-  xₙ₊₁ = next_state_system(iterator, control); uₙ = control
-  iterator.X = Xₙ₊₁ = StochasticState(xₙ₊₁, uₙ)
+  #xₙ₊₁ = next_state_system(iterator, control); uₙ = control
+  #iterator.X = Xₙ₊₁ = StochasticState(xₙ₊₁, uₙ)
+  noise = rand(iterator.noiser)
+  update_real_state!(iterator.observer, iterator.updater, control, noise)
+  iterator.u = control
 end
 
 
@@ -115,8 +122,8 @@ Sn(iterator::LinearKalmanIterator) = Fn(iterator) * Gn(iterator)'
 Rn(iterator::LinearKalmanIterator) = Gn(iterator) * Gn(iterator)'
 Qn(iterator::LinearKalmanIterator) = Fn(iterator) * Fn(iterator)'
 
-xn(iterator::LinearKalmanIterator) = iterator.X.x
-un(iterator::LinearKalmanIterator) = iterator.X.u
+#xn(iterator::LinearKalmanIterator) = iterator.X.x
+un(iterator::LinearKalmanIterator) = iterator.u
 
 hatx(iterator) = iterator.hatX.hatx
 hatP(iterator) = iterator.hatX.hatP
@@ -140,7 +147,7 @@ KalmanGain(iterator) = KalmanGain(iterator, next_hatP(iterator))
 # Funciones más generales para observar y actualizar el sistema
 
 # Observar
-observe_inner_system(iterator) = iterator.observer(iterator.X, rand(iterator.noiser))
+observe_inner_system(iterator) = observe_real_state(iterator.observer, un(iterator), rand(iterator.noiser))
 
 function observe_observed_system(iterator)
   tempX = StochasticState(next_hatx(iterator), un(iterator))
@@ -148,17 +155,18 @@ function observe_observed_system(iterator)
 end
 
 # Actualizar
-next_state_system(iterator, control) = iterator.updater(xn(iterator), control, rand(iterator.noiser))
+#next_state_system(iterator, control) = iterator.updater(xn(iterator), control, rand(iterator.noiser))
 #next_observed_system(iterator, control) = iterator.updater(hatx(iterator), control, 0.)
 
-function update_state!(iterator, xnext, control)
-  iterator.X = StochasticState(xnext, control)
-end
 
-function update_state_system!(iterator, control)
-  next = next_state_system(iterator, control)
-  update_state!(iterator, next, control)
-end
+#function update_state!(iterator, xnext, control)
+#  iterator.X = StochasticState(xnext, control)
+#end
+
+#function update_state_system!(iterator, control)
+#  next = next_state_system(iterator, control)
+#  update_state!(iterator, next, control)
+#end
 
 #function update_observer_system!(iterator, updater, control)
 #  next = next_observed_system(iterator, control)
@@ -225,7 +233,7 @@ end
 """
 function full_iteration(iterator, dt, N, control_function)
 
-  dimensions = length(xn(iterator))
+  dimensions = length(get_inner_state(iterator.observer))
 
   observations = Vector{Float64}(undef, N)
   real_states = Array{Float64, 2}(undef, N, dimensions)
@@ -239,7 +247,7 @@ function full_iteration(iterator, dt, N, control_function)
     control = control_function(i * dt)
     #observation = KalmanFilter.observe_inner_system(iterator)
 
-    real_states[i,:] = KalmanFilter.xn(iterator)
+    real_states[i,:] = KalmanFilter.get_inner_state(iterator.observer)
     analysis[i,:] = KalmanFilter.hatx(iterator)
 
     forecastx, forecastP = KalmanFilter.forecast(iterator, control)
