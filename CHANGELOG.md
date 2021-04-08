@@ -4,6 +4,8 @@ Los cambios notables al proyecto serán documentados aquí. Esta es la primera v
 El formato está basado en su mayor parte en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), y el proyecto se adhiere al [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- ![Changed][badge-changed] Mayor modularidad al cambiar el comportamiento (y la interfaz) de `KalmanObserver`. `KalmanIterator` no necesita conocer el sistema real que se intenta *trackear*, se deja que `KalmanObserver` se encargue de él, por lo que ahora tener un sistema real interno es opcional. Esto abre la puerta a trabajar con sistemas físicos de los que únicamente se conocen los datos de mediciones.
+- ![Removed][]
 
 ## Versión `v0.2.0` - 2021-04-08
 - ![Added][badge-added] Es posible usar filtro de kalman para mantener un sistema interno lineales o no lineal, el cual puede ser observado con un un observador lineal. Es posible averiguar un input desconocido (un número, no un vector). 
@@ -14,7 +16,7 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 [badge-removed]: https://img.shields.io/static/v1?label=&message=Removed&color=critical&style=flat-square
 [badge-added]: https://img.shields.io/static/v1?label=&message=Added&color=brightgreen&style=flat-square
 [badge-deprecated]: https://img.shields.io/static/v1?label=&message=Deprecated&color=orange&style=flat-square
-[badge-enhancement]: https://img.shields.io/static/v1?label=&message=Enhancement&color=blue&style=flat-square 
+[badge-changed]: https://img.shields.io/static/v1?label=&message=Changed&color=blue&style=flat-square 
 [badge-fixed]: https://img.shields.io/static/v1?label=&message=Fixed&color=blueviolet&style=flat-square 
 [badge-experimental]: https://img.shields.io/static/v1?label=&message=Experimental&color=lightgrey&style=flat-square
 
