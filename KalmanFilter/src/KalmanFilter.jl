@@ -10,10 +10,8 @@ include("observers.jl")
 
 include("kalman.jl")
 
-
-
 include("discretizers.jl")
 include("NLkalman.jl")
 include("UnknownInput.jl")
-
+include("EnKFUpdater.jl")
 end # module
