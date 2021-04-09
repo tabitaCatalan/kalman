@@ -12,10 +12,22 @@ Métodos a implementar | Breve descripción
 `analyse!(iterator, observation)` | Analiza la observación ``y_{n+1}`` para generar una nueva estimación a posteriori ``\hat{x}_{n+1,n+1}``.
 `update_updater!(iterator)` | Permite actualizar el updater luego de la iteración. Puede usarse por ejemplo, con un updater no lineal que debe ser linealizado tras cada iteración. Puede dejarse en blanco. 
 
-Un ejemplo es 
+Hay dos opciones disponibles 
+
+## LinearKalmanIterator 
+
+Permite realizar iterar con el filtro de Kalman de toda la vida.
 
 ```@docs
 KalmanFilter.LinearKalmanIterator
+```
+
+## EnKF 
+
+Permite iterar un ensamble de estados aproximados, los que representan una muestra de la distribución de los estados en el tiempo indicado. Esto permite generar aproximaciones con el promedio y la covarianza muestral de los datos.
+
+```@docs
+KalmanFilter.EnKF
 ```
 
 !!! danger "Atención"

@@ -5,6 +5,8 @@ using Statistics, Distributions, Random
 """
 `KalmanIterator` que permite aproximar un estado mediante la técnica Ensemble
 Kalman Filter.
+
+$(TYPEDFIELDS)
 """
 mutable struct EnKF <: KalmanFilter.KalmanIterator
     """Número de iteración actual ``n``. Se inicializa en 0."""
