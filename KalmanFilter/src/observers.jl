@@ -54,6 +54,11 @@ Hn(observer::LinearObserver) = observer.H
 Dn(observer::LinearObserver) = observer.D
 Gn(observer::LinearObserver) = observer.G
 
+function kalman_size(observer::LinearObserver)
+  H = Hn(observer)
+  size(H')
+end
+
 function observe_real_state(observer::LinearObserver, control, error)
   observer(get_inner_state(observer), control, error)
 end
