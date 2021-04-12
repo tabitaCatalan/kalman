@@ -208,32 +208,23 @@ function full_iteration(iterator, dt, N, control_function)
 
   dimensions = length(get_inner_state(iterator.observer))
 
-  observations = Vector{Float64}(undef, N)
-  real_states = Array{Float64, 2}(undef, N, dimensions)
-  analysis = Array{Float64, 2}(undef, N, dimensions)
-  forecasted = Array{Float64, 2}(undef, N, dimensions)
-
-  errors_analysis = Array{Float64, 2}(undef, N, dimensions)
-  errors_forecast = Array{Float64, 2}(undef, N, dimensions)
+  results = InnerStateSeries(N, dimensions)
 
   for i in 1:N
     control = control_function(i * dt)
     #observation = KalmanFilter.observe_inner_system(iterator)
 
-    real_states[i,:] = get_inner_state(iterator.observer)
-    analysis[i,:] = hatx(iterator)
+    add_state!(results, i, get_inner_state(iterator.observer))
+    add_analysis!(results, i, hatx(iterator))
+
 
     forecastx, forecastP = forecast(iterator, control)
-    forecasted[i,:] = forecastx
-    errors_analysis[i,:] = [hatP(iterator)[j,j] for j in 1:dimensions]
-    errors_forecast[i,:] = [forecastP[j,j] for j in 1:dimensions]
+    add_forecast!(results, i, forecastx)
+    add_error_analysis!(results, i, [hatP(iterator)[j,j] for j in 1:dimensions])
+    add_error_forecast!(results, i, [forecastP[j,j] for j in 1:dimensions])
 
-    #iterator.X.x ≈ iterator.hatX.hatx ? print("!") :
-    #predictions2[i,:] = KalmanFilter.analysed_state(iterator, observation)
-
-    observations[i] = next_iteration!(iterator, control)[1]
-    # Save states
+    add_observation!(results, i, next_iteration!(iterator, control)[1])
 
   end
-  observations, real_states, analysis, forecasted, errors_analysis, errors_forecast
+  results
 end
