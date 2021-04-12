@@ -77,15 +77,17 @@ end
 
 @recipe function f(r::KalmanFilter.InnerStateSeries, ts, index, rango = 1:length(ts))
     i = index
-    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Infectados acumulados"]
+    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Infectados acumulados", "Control"]
     title --> titles[i]
     xguide --> "Tiempos t (días)"
     yguide --> "Personas"
-    @series begin
-        seriestype := :path
-        label --> "Real"
-        linewidth --> 2.
-        ts[rango], r.inner_states[rango,i]
+    if i ≠ 6
+        @series begin
+            seriestype := :path
+            label --> "Real"
+            linewidth --> 2.
+            ts[rango], r.inner_states[rango,i]
+        end
     end
     @series begin
         seriestype := :path
