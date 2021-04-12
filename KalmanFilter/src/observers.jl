@@ -39,6 +39,9 @@ struct LinearObserver{T} <: KalmanObserver
   D::AbstractVector{T}
   G::AbstractVector{T}
   x::AbstractVector{T}
+  function LinearObserver(H::AbstractMatrix{T}, D::AbstractVector{T}, G::AbstractVector{T}, x::AbstractVector{T}) where T
+    new{T}(H,D,G,copy(x))
+  end
 end
 function get_inner_state(observer::LinearObserver) observer.x end
 function set_inner_state!(observer::LinearObserver, x) observer.x .= x end
