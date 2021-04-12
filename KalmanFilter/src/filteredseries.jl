@@ -73,3 +73,48 @@ end
 function add_error_forecast!(serie::InnerStateSeries, iteration, forecasted_state)
     add_to_array!(serie.error_forecast, iteration + 1, forecasted_state)
 end
+
+
+@recipe function f(r::KalmanFilter.InnerStateSeries, ts, index, rango = 1:length(ts))
+    i = index
+    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Infectados acumulados"]
+    title --> titles[i]
+    xguide --> "Tiempos t (días)"
+    yguide --> "Personas"
+    @series begin
+        seriestype := :path
+        label --> "Real"
+        linewidth --> 2.
+        ts[rango], r.inner_states[rango,i]
+    end
+    @series begin
+        seriestype := :path
+        #primary := false
+        linecolor:= nothing
+        label --> "Análisis, con error 2σ"
+        ribbon --> 2 * sqrt.(r.error_analysis[:,i])
+        ts[rango], r.analysis[rango,i]
+    end
+    @series begin
+        seriestype := :path
+        a = :seriescolor
+        label --> "Análisis, con error 1σ"
+        ribbon --> sqrt.(r.error_analysis[:,i])
+        ts[rango], r.analysis[rango,i]
+    end
+    #=@series begin
+        seriestype := :path
+        label --> "Forecast"
+        ts[rango], r.forecast[rango,i]
+    end=#
+    if i == 5
+        @series begin
+            seriestype := :path
+            label --> "Observaciones"
+            ts[rango], r.observations[rango]
+        end
+    end
+
+    #label --> "Análisis"
+    #ts, r.analysis[:,index]
+end
