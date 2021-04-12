@@ -8,8 +8,11 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 - Crear estructuras para almacenar los resultados de un iteración completa de filtro de Kalman.
 - Hacer recetas para graficar los resultados.
 
-<!--## Unreleased
-- ![Added][badge-added] Se agregan funciones para graficar los resultados de `EnKF`.-->
+## Unreleased
+- ![Added][badge-added] Se agrega la estructura `FilteredSeries` para almacenar los resultados de la iteración de Kalman.
+- ![Added][badge-added] Se añade `RecipesBase` a las dependencias. 
+- ![Added][badge-added] Se crea una receta para graficar `FilteredSeries`, para el caso en que sus resultados corresponden al modelo SEIIcI con input desconocido.
+- ![Fixed][badge-fixed] Se corrige un error en `LinearObserver`; modificaba el vector `x0` de condiciones iniciales, lo que causaba problemas al correrlo por segunda vez.
 
 ## Versión `v0.4.0` - 2021-04-09
 - ![Added][badge-added] Se agrega un iterador `EnKF` que permite trabajar con Filtro de Kalman por ensambles.
