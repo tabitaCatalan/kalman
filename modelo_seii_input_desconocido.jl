@@ -63,6 +63,7 @@ function control_pieces(t)
     end
 end
 
+
 # Veamos un gráfico del control usado, para lo que definimos un vector con los tiempos `ts`.
 ts = 0.0:dt:(T-dt)
 plot(ts, control_pieces.(ts), label = "Control real")
@@ -75,30 +76,12 @@ iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, obser
 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
 # en las variables que aparecen abajo.
-observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, dt, N, t -> 0.)
+results = KalmanFilter.full_iteration(iterator, dt, N, t -> 0.)
 
 # ## Resultados
 # Graficaremos los estados internos considerados, y los resultados obtenidos.
 
 rango = 1:floor(Int,length(ts))
-
-# Definimos unas funciones horribles para acortar el proceso
-function plotstate!(a_plot, state_index, ts, rango = 1:length(ts); labels = ["Real", "Kalman analysed", "Kalman forecast"])
-  i = state_index
-  dimensions = size(real_states)[2]
-  nans = NaN * ones(dimensions)'
-  errors_forecast_correction = [nans; errors_forecast[1:end-1,:]]
-  forecast_correction = [nans; forecast[1:end-1,:]]
-  if i ≠ 6
-    plot!(a_plot, ts[rango], real_states[rango,i], label = labels[1])
-  end
-  #plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2])
-
-  plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2], ribbon = 2 * sqrt.(abs.(errors_analysis[rango,i])))
-  plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2], ribbon = sqrt.(abs.(errors_analysis[rango,i])))
-  #plot!(a_plot, ts[rango], forecast_correction[rango,i], label = labels[3], ribbon = sqrt.(abs.(errors_forecast_correction[rango,i])))
-  a_plot
-end
 
 function plot_error(state_index, state_name)
   i = state_index
@@ -111,29 +94,22 @@ end
 # aproximaciones obtenidas con filtro de Kalman.
 
 # Susceptibles ``S``
-a_plot = plot(title = "Susceptibles")
-plotstate!(a_plot, 1, ts)
+plot(results, ts, 1)
 
 # Expuestos ``E``
-a_plot = plot(title = "Expuestos")
-plotstate!(a_plot, 2, ts)
+plot(results, ts, 2)
 
 # Infectados asintomáticos *mild* ``I^m``
-a_plot = plot(title = "Mild")
-plotstate!(a_plot, 3, ts)
+plot(results, ts, 3)
 
 # Infectados ``I``
-a_plot = plot(title = "Infectado")
-plotstate!(a_plot, 4, ts)
+plot(results, ts, 4)
 
 # Infectados acumulados ``cI``, y las observaciones que hicimos de él.
-a_plot = plot(title = "Acumulados")
-plotstate!(a_plot, 5, ts)
-plot!(ts[rango], observations[rango], label = "Observaciones", legend =:bottomright)
+plot(results, ts, 5)
 
 # Finalmente, veamos el control usado y el aproximado
-a_plot = plot(title = "Control")
-plot!(ts, control_pieces.(ts), label = "Control real")
-plotstate!(a_plot, 6, ts)
+plot(ts, control_pieces.(ts), label = "Control real")
+plot!(results, ts, 6)
 
 # Notamos que tras una cierta cantidad de tiempo es posible averiguarlo con bastante certeza.
