@@ -44,7 +44,7 @@ function EnKF(states, updater, observer::KalmanFilter.KalmanObserver, dt = 1.)
     N = length(states)
     kf, kc = KalmanFilter.kalman_size(observer)
     K_initialize = Array{Float64,2}(undef, kf, kc)
-    EnKF(0, N, 1., states, similar(states), K_initialize, updater, observer, Normal(0.,dt))
+    EnKF(0, N, 1., states, similar(states), K_initialize, updater, observer, Normal(0.,dt^2))
 end
 
 function update_inner_state!(enkf::EnKF, control)

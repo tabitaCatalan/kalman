@@ -78,7 +78,7 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
     #X = StochasticState(x0, 0.)
     hatX = ObservedState(x0, P0)
     next_hatX = ObservedState(x0, P0)
-    noiser = Normal(0.,dt)
+    noiser = Normal(0.,dt^2)
     new{T}(n, 1., hatX, next_hatX, updater, observer, noiser)
   end
 end
