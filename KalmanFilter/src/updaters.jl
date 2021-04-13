@@ -5,7 +5,10 @@
 # Interfaz que debe ser definida por las estructuras tipo `KalmanUpdater`.
 abstract type KalmanUpdater end
 function update!(L::KalmanUpdater, hatx, control) error("Updating method not defined") end
-function (updater::KalmanUpdater)(x::AbstractArray, u::Real, error) error("Evaluation method not defined") end
+#function (updater::KalmanUpdater)(x::AbstractArray, u::Real, noise) error("Evaluation method not defined") end
+function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, noise) error("Implement update_inner_system") end
+function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, noise) error("Implement update_aproximation") end
+
 function Mn(::KalmanUpdater) error("Mn no definida") end
 function Bn(::KalmanUpdater) error("Bn no definida") end
 function Fn(::KalmanUpdater) error("Fn no definida") end
@@ -45,6 +48,10 @@ end
 function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, error)
   updater.M * x + updater.B * u + updater.F * error
 end
+
+update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
+update_aproximation(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
+
 
 function update!(L::SimpleLinearUpdater, hatx, control) end # no necesita actualizarse
 

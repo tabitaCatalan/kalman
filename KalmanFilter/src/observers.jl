@@ -25,7 +25,7 @@ function observe_real_state(observer::KalmanObserver) error("observe_real_state 
 function get_inner_state(observer::KalmanObserver) error("inner state not defined") end
 # Esta función debería ser opcional, de quienes tengan inner state. O dejarla en  blanco
 function update_real_state!(observer::KalmanObserver, updater::KalmanUpdater, control, error)
-  new_state = integrity_correction(updater(get_inner_state(observer), control, error))
+  new_state = integrity_correction(update_inner_system(updater, get_inner_state(observer), control, error))
 
   set_inner_state!(observer, new_state)
   #error("Updating method not defined")

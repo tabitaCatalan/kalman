@@ -163,7 +163,7 @@ function forecast(iterator::LinearKalmanIterator, control)
 end
 
 function forecast_hatx(updater, hatx, control)
-  updater(hatx, control, 0.)
+  update_aproximation(updater, hatx, control, 0.)
 end
 
 function forecast_hatx(iterator::LinearKalmanIterator, control)

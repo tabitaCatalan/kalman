@@ -54,6 +54,12 @@ Fn(updater::NLUpdater) = Fn(updater.linear)
 function (updater::NLUpdater)(x::AbstractArray, u::Real, error)
   updater.discretizer(x, u) + updater.F * error
 end
+
+update_inner_system(updater::NLUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
+update_aproximation(updater::NLUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
+
+
+
 #### podría hacer algo que retorne un linear updater...
 
 function linearize_x(NLup::NLUpdater, x, α)

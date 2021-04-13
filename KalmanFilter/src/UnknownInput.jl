@@ -119,11 +119,22 @@ end
 function (nl::NLUpdaterUnknowInput)(X::AbstractArray, u::Real, error)
   X_next = similar(X)
   x = X[1:end-1]
-  # una forma terrible de decir que estoy evaluando el sistema observado o el real
-  u = error ≈ 0. ? next_control(nl) : X[end]
-  X_next[1:end-1] = nl.state_updater(x, u, error)
+  X_next[1:end-1] = update_inner_system(nl.state_updater, x, u, error)
   X_next[end] = u
   X_next
 end
+
+function update_inner_system(nl::NLUpdaterUnknowInput, X::AbstractArray, u::Real, noise)
+  u = next_control(nl)
+  nl(X,u,noise)
+end
+function update_aproximation(nl::NLUpdaterUnknowInput, X::AbstractArray, u::Real, noise)
+  u = X[end]
+  nl(X,u,noise)
+end
+
+
+
+
 
 next_control(nl::NLUpdaterUnknowInput) = nl.control(nl.n * nl.state_updater.discretizer.dt)

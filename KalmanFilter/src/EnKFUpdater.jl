@@ -56,7 +56,7 @@ end
 mean_cov_from_sample(sample) = mean(sample), cov(sample)
 
 function forecast_hatX(enkf::EnKF, control)
-    [enkf.updater(enkf.states_hatx[i], control, rand(enkf.noiser)) for i in 1:enkf.N]
+    [update_aproximation(enkf.updater, enkf.states_hatx[i], control, rand(enkf.noiser)) for i in 1:enkf.N]
 end
 
 function forecast_observed_state!(enkf::EnKF, control)
