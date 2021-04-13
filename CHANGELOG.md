@@ -13,6 +13,8 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 - ![Added][badge-added] Se añade `RecipesBase` a las dependencias. 
 - ![Added][badge-added] Se crea una receta para graficar `FilteredSeries`, para el caso en que sus resultados corresponden al modelo SEIIcI con input desconocido.
 - ![Fixed][badge-fixed] Se corrige un error en `LinearObserver`; modificaba el vector `x0` de condiciones iniciales, lo que causaba problemas al correrlo por segunda vez.
+- ![Fixed][badge-fixed] Se agregan restricciones de integridad a los estados de `LinearObserver`. Esto permite que no se obtengan valores sin sentido físico ( valores negativos en una EDO epidemiológica) tanto en los estados como en las observaciones. Se requiere más generalidad.
+- ![Fixed][badge-fixed] Se corrige un error en el ruido de las EDOs, se está usando un valor constante pero debería ser dependiente del tamaño del paso (Normal(0, dt)). Ver método de Euler-Maguyama.
 
 ## Versión `v0.4.0` - 2021-04-09
 - ![Added][badge-added] Se agrega un iterador `EnKF` que permite trabajar con Filtro de Kalman por ensambles.
