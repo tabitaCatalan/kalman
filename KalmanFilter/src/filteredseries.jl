@@ -43,12 +43,15 @@ mutable struct InnerStateSeries <: FilteredSeries
 end
 
 function add_to_vector!(vector, index, value)
-    try
+    if 1 <= index && index <= length(vector)
         vector[index] = value
-    catch
     end
 end
-function add_to_array!(array, index, vector_values) array[index,:] .= vector_values end
+function add_to_array!(array, index, vector_values)
+    if 1 <= index && index <= size(array)[1]
+        array[index,:] .= vector_values
+    end
+end
 
 function add_observation!(serie::InnerStateSeries, iteration, observation)
     add_to_vector!(serie.observations, iteration, observation)
