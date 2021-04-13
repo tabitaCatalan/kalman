@@ -40,11 +40,11 @@ mutable struct EnKF <: KalmanFilter.KalmanIterator
 end
 
 
-function EnKF(states, updater, observer::KalmanFilter.KalmanObserver)
+function EnKF(states, updater, observer::KalmanFilter.KalmanObserver, dt = 1.)
     N = length(states)
     kf, kc = KalmanFilter.kalman_size(observer)
     K_initialize = Array{Float64,2}(undef, kf, kc)
-    EnKF(0, N, 1., states, similar(states), K_initialize, updater, observer, Normal(0,1))
+    EnKF(0, N, 1., states, similar(states), K_initialize, updater, observer, Normal(0.,dt))
 end
 
 function update_inner_state!(enkf::EnKF, control)

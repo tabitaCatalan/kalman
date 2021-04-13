@@ -73,12 +73,12 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
   """
   function LinearKalmanIterator(x0::AbstractVector{T}, P0::AbstractMatrix{T},
       updater::KalmanUpdater,
-      observer::KalmanObserver) where T <: Real
+      observer::KalmanObserver, dt = 1.) where T <: Real
     n = 0
     #X = StochasticState(x0, 0.)
     hatX = ObservedState(x0, P0)
     next_hatX = ObservedState(x0, P0)
-    noiser = Normal()
+    noiser = Normal(0.,dt)
     new{T}(n, 1., hatX, next_hatX, updater, observer, noiser)
   end
 end

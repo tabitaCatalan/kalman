@@ -28,6 +28,7 @@ tildex0 = [x0; 1.]
 
 dt = 0.2
 T = 100.
+T = 50.
 N = Int(T/dt)
 
 # Definimos los parámetros
@@ -72,11 +73,13 @@ plot(ts, control_pieces.(ts), label = "Control real")
 nlupdater = NLUpdater(rk,F,x0,1.)
 nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces)
 observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
-iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer)
+iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer, dt)
 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
 # en las variables que aparecen abajo.
 results = KalmanFilter.full_iteration(iterator, dt, N, t -> 0.)
+
+plot(results, ts, 2)
 
 # ## Resultados
 # Graficaremos los estados internos considerados, y los resultados obtenidos.
