@@ -1,7 +1,7 @@
 # Changelog
 Los cambios notables al proyecto serán documentados aquí. Esta es la primera vez que intento mantener un proyecto bien documentado, y comencé cuando ya había avanzado bastante, por lo que, este *change log* no es muy detallado en las versiones más antiguas. La idea es ir aprendiendo a medida que avanzo. 
 
-El formato está basado en su mayor parte en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), y el proyecto se adhiere al [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+El formato está basado en su mayor parte en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), y el proyecto intenta adherirse al [Semantic Versioning](https://semver.org/spec/v2.0.0.html), aunque aún tengo problemas para seguirlo.
 
 ## Trabajo futuro 
 - Agregar funciones para graficar los resultados de `EnKF`
@@ -9,6 +9,8 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 - Hacer recetas para graficar los resultados.
 
 ## Unreleased
+
+## Versión `v0.5.0` - 2021-04-09
 - ![Added][badge-added] Se agrega la estructura `FilteredSeries` para almacenar los resultados de la iteración de Kalman.
 - ![Added][badge-added] Se añade `RecipesBase` a las dependencias. 
 - ![Added][badge-added] Se crea una receta para graficar `FilteredSeries`, para el caso en que sus resultados corresponden al modelo SEIIcI con input desconocido.
