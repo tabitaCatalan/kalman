@@ -10,7 +10,7 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 
 ## Unreleased
 
-## Versión `v0.5.0` - 2021-04-09
+## Versión `v0.5.0` - 2021-04-13
 - ![Added][badge-added] Se agrega la estructura `FilteredSeries` para almacenar los resultados de la iteración de Kalman.
 - ![Added][badge-added] Se añade `RecipesBase` a las dependencias. 
 - ![Added][badge-added] Se crea una receta para graficar `FilteredSeries`, para el caso en que sus resultados corresponden al modelo SEIIcI con input desconocido.
