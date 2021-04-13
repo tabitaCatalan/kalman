@@ -76,21 +76,23 @@ mutable struct NLUpdaterUnknowInput <: KalmanUpdater
   linear::SimpleLinearUpdater
   control
   n::Int
+  Fa::Float64
   """
   # Argumentos
-  - `nlupdater`: Debe ser x y u diferenciable
+  - `nlupdater`: Debe ser ``x`` y ``u``-diferenciable
   - `control`: una función evaluable en tiempo
+  - `Fa`: Error esperado en el input
   """
-  function NLUpdaterUnknowInput(nlupdater::NLUpdater, control)
+  function NLUpdaterUnknowInput(nlupdater::NLUpdater, control, Fa)
     # update nlupdater en x0
     # Para que funcione el Bn() hay que definir el linearize_u en el discretizador
-    linear = linearize_augmented_state(nlupdater)
+    linear = linearize_augmented_state(nlupdater, Fa)
     n = 0
-    new(nlupdater, linear, control, n)
+    new(nlupdater, linear, control, n, Fa)
   end
 end
 
-function linearize_augmented_state(nlupdater)
+function linearize_augmented_state(nlupdater, Fa)
   M = Mn(nlupdater)
   filas = size(M)[1]; columnas = size(M)[1]
   tildeM = [M Bn(nlupdater); zeros(filas)' 1.]
@@ -99,7 +101,7 @@ function linearize_augmented_state(nlupdater)
 
   #tildex0 = [x0; 1.]
 
-  tildeF = [nlupdater.F; 0.]
+  tildeF = [nlupdater.F; Fa]
   linear = SimpleLinearUpdater(tildeM, zeros(columnas + 1), tildeF)
   linear
 end
@@ -112,7 +114,7 @@ function update!(nl::NLUpdaterUnknowInput, hatX, control)
   hatx = hatX[1:end-1]
   hatu = hatX[end]
   update!(nl.state_updater, hatx, hatu)
-  nl.linear = linearize_augmented_state(nl.state_updater)
+  nl.linear = linearize_augmented_state(nl.state_updater, nl.Fa)
   nl.n += 1
 end
 
