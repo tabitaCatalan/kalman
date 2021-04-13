@@ -5,6 +5,15 @@
 
 abstract type KalmanObserver end
 
+"""//TODO debería ser un input de observer
+Corrige al vector de estado x para que se obtengan resultados dentro de cierto
+dominio. Para el caso donde el estado proviene de una EDO epidemiológica, los
+resultados deben ser no negativos.
+"""
+function integrity_correction(x)
+  max.(x, 0.)
+end
+
 
 function (observer::KalmanObserver)(x::AbstractArray, u::Real, error) error("Evaluation method not defined") end
 function Hn(::KalmanObserver) error("Hn no definida") end
@@ -16,7 +25,8 @@ function observe_real_state(observer::KalmanObserver) error("observe_real_state 
 function get_inner_state(observer::KalmanObserver) error("inner state not defined") end
 # Esta función debería ser opcional, de quienes tengan inner state. O dejarla en  blanco
 function update_real_state!(observer::KalmanObserver, updater::KalmanUpdater, control, error)
-  new_state = updater(get_inner_state(observer), control, error)
+  new_state = integrity_correction(updater(get_inner_state(observer), control, error))
+
   set_inner_state!(observer, new_state)
   #error("Updating method not defined")
 end
@@ -50,7 +60,7 @@ function set_inner_state!(observer::LinearObserver, x) observer.x .= x end
 #end
 
 function (observer::LinearObserver)(x::AbstractArray, u::Real, error)
-  observer.H * x + observer.D * u + observer.G * error
+  integrity_correction(observer.H * x + observer.D * u + observer.G * error)
 end
 
 Hn(observer::LinearObserver) = observer.H
