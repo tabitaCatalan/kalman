@@ -77,7 +77,9 @@ function analyse!(enkf::EnKF, observation)
     end
 end
 
-function update_updater!(enkf::EnKF) end
+function update_updater!(enkf::EnKF)
+    update!(enkf.updater, hatx(enkf), enkf.u)
+end
 
 hatx(enkf::EnKF) = mean(enkf.states_hatx)
 hatP(enkf::EnKF) = cov(enkf.states_hatx)
