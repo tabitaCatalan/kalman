@@ -85,3 +85,46 @@ hatx(enkf::EnKF) = mean(enkf.states_hatx)
 hatP(enkf::EnKF) = cov(enkf.states_hatx)
 
 forecast(enkf::EnKF, control) = mean_cov_from_sample(forecast_hatX(enkf, control))
+
+#===#
+
+
+struct EnsamblesStoring
+    ensambles::Array{Float64, 3}
+    """
+    # Argumentos 
+    - `N`: número de ensambles en cada paso 
+    - `dimensions`: dimensión de cada ensamble
+    - `Nt`: número de pasos temporales a guardar 
+    """
+    function EnsamblesStoring(N, dimensions, Nt)
+        new(Array{Float64, 3}(undef,N, dimensions, Nt))
+    end
+end
+
+function add_ensamble!(ensemble::EnsamblesStoring, i, iterator::KalmanIterator) end
+
+function add_ensamble!(ensemble::EnsamblesStoring, n, enkf::EnKF)
+    for (i,member) in enumerate(enkf.states_hatx)
+        ensemble.ensambles[i,:,n] .= member
+    end
+end
+
+using RecipesBase
+
+@recipe function f(en::EnsamblesStoring, ts, index, rango = 1:length(ts))
+    i = index
+    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Infectados acumulados", "Control"]
+    title --> titles[i]
+    xguide --> "Tiempos t (días)"
+    yguide --> "Personas"
+    @series begin
+        primary := false
+        seriestype := :path
+        label --> :none
+        linewidth --> 0.1
+        seriescolor := :gray
+        seriesalpha := 0.8
+        ts[rango], en.ensambles[:,i,:]'
+    end
+end

@@ -204,16 +204,17 @@ end
 # Argumentos
 - `control_function`: control en función del tiempo
 """
-function full_iteration(iterator, dt, N, control_function)
+function full_iteration(iterator, dt, N, control_function, ensamble_size)
 
   dimensions = length(get_inner_state(iterator.observer))
 
   results = InnerStateSeries(N, dimensions)
+  ensamble = EnsamblesStoring(ensamble_size, dimensions, N)
 
   for i in 1:N
     control = control_function(i * dt)
     #observation = KalmanFilter.observe_inner_system(iterator)
-
+    add_ensamble!(ensamble, i, iterator)
     add_state!(results, i, get_inner_state(iterator.observer))
     add_analysis!(results, i, hatx(iterator))
 
@@ -226,5 +227,5 @@ function full_iteration(iterator, dt, N, control_function)
     add_observation!(results, i, next_iteration!(iterator, control)[1])
 
   end
-  results
+  results, ensamble
 end
