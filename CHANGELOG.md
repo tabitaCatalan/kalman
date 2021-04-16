@@ -4,11 +4,13 @@ Los cambios notables al proyecto serán documentados aquí. Esta es la primera v
 El formato está basado en su mayor parte en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), y el proyecto intenta adherirse al [Semantic Versioning](https://semver.org/spec/v2.0.0.html), aunque aún tengo problemas para seguirlo.
 
 ## Trabajo futuro 
-- Agregar funciones para graficar los resultados de `EnKF`
-- Crear estructuras para almacenar los resultados de un iteración completa de filtro de Kalman.
-- Hacer recetas para graficar los resultados.
+- Agregar un `KalmanObserver` que permita incorporar datos externos.
 
 ## Unreleased
+
+## Versión `v0.6.0`- 2021-04-16
+- ![Added][badge-added] Nueva estructura `EnsamblesStoring` para almacenar los ensambles durante la iteración de `EnKF`. 
+- ![Added][badge-added] Receta para graficar `EnsamblesStoring`.
 
 ## Versión `v0.5.1` - 2021-04-16
 - ![Fixed][badge-fixed] `EnKF` no actualizaba al `Updater` para ahorrar trabajo, pero esto sí era necesario (sobre todo con el updater que incluye un input desconocido). Se corrigió. Se necesita un updater más liviano.
