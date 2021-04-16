@@ -18,6 +18,10 @@ function (updater::KalmanUpdater)(state::StochasticState, error)
   updater(state.x, state.u, error)
 end
 
+function integrity(x)
+  max.(x, 0.)
+end
+
 
 #= LinearUpdater define la interfaz de KalmanUpdater =#
 
@@ -46,7 +50,7 @@ end
 
 
 function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, error)
-  updater.M * x + updater.B * u + updater.F * error
+  integrity(updater.M * x + updater.B * u + updater.F * error)
 end
 
 update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)

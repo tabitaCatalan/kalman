@@ -52,7 +52,7 @@ Fn(updater::NLUpdater) = Fn(updater.linear)
 
 
 function (updater::NLUpdater)(x::AbstractArray, u::Real, error)
-  updater.discretizer(x, u) + updater.F * error
+  integrity(updater.discretizer(x, u) + updater.F * error)
 end
 
 update_inner_system(updater::NLUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
