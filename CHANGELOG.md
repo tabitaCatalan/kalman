@@ -10,6 +10,10 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 
 ## Unreleased
 
+## Versión `v0.5.1` - 2021-04-16
+- ![Fixed][badge-fixed] `EnKF` no actualizaba al `Updater` para ahorrar trabajo, pero esto sí era necesario (sobre todo con el updater que incluye un input desconocido). Se corrigió. Se necesita un updater más liviano.
+- ![Fixed][badge-fixed] Se agregan restricciones de integridad a los `KalmanUpdater` `NLUpdater` y `SimpleLinearUpdater`, pero de una mala forma, hay que corregirlo, lo que cambiará la interfaz de `KalmanUpdater`.
+- 
 ## Versión `v0.5.0` - 2021-04-13
 - ![Added][badge-added] Se agrega la estructura `FilteredSeries` para almacenar los resultados de la iteración de Kalman.
 - ![Added][badge-added] Se añade `RecipesBase` a las dependencias. 
