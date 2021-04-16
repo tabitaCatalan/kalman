@@ -21,3 +21,11 @@ Literate.markdown("..\\modelo_seii_input_desconocido.jl", "src\\ejemplos\\";
                   name = "NLFilterUnknownInput", preprocess = replace_example_includes#, 
                   #config = Dict("codefence" => ("```julia" => "```"))
                   )
+Literate.markdown("..\\modelo_seii_enkf.jl", "src\\ejemplos\\";
+                  name = "NLFilterENKF", preprocess = replace_example_includes#, 
+                  #config = Dict("codefence" => ("```julia" => "```"))
+                  )
+Literate.markdown("..\\modelo_seii_filtro_extendido.jl", "src\\ejemplos\\";
+                  name = "NLFilter", preprocess = replace_example_includes#, 
+                  #config = Dict("codefence" => ("```julia" => "```"))
+                  )

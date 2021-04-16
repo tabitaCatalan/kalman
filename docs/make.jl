@@ -10,8 +10,10 @@ makedocs(modules=[KalmanFilter],
          pages = Any[
          "KalmanFilter.jl" => "index.md",
          "Iterators" => "iterators.md",
-         "Ejemplos" => Any["ejemplos/NLFilterUnknownInput.md"],
          "Updaters" => "updaters.md", 
          "Observers" => "observers.md",
-         "Discretizers" => "discretizers.md"
+         "Discretizers" => "discretizers.md", 
+         "Ejemplos" => Any["ejemplos/NLFilterUnknownInput.md", 
+                            "ejemplos/NLFilter.md", 
+                            "ejemplos/NLFilterENKF.md"],
          ])
