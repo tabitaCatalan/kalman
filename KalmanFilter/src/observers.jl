@@ -19,17 +19,6 @@ function (observer::KalmanObserver)(x::AbstractArray, u::Real, error) error("Eva
 function Hn(::KalmanObserver) error("Hn no definida") end
 function Dn(::KalmanObserver) error("Dn no definida") end
 function Gn(::KalmanObserver) error("Gn no definida") end
-function observe_real_state(observer::KalmanObserver) error("observe_real_state no definida para este KalmanObserver") end
-
-# Opcionales
-function get_inner_state(observer::KalmanObserver) error("inner state not defined") end
-# Esta función debería ser opcional, de quienes tengan inner state. O dejarla en  blanco
-function update_real_state!(observer::KalmanObserver, updater::KalmanUpdater, control, error)
-  new_state = update_inner_system(updater, get_inner_state(observer), control, error)
-
-  set_inner_state!(observer, new_state)
-  #error("Updating method not defined")
-end
 
 #==================================================================
 Implementación sencilla de la interfaz: LinearObserver
@@ -44,20 +33,11 @@ de un estado interno ``x``.
 # Campos
 $(TYPEDFIELDS)
 """
-struct LinearObserver{T} <: KalmanObserver
-  H::AbstractMatrix{T}
-  D::AbstractVector{T}
-  G::AbstractVector{T}
-  x::AbstractVector{T}
-  function LinearObserver(H::AbstractMatrix{T}, D::AbstractVector{T}, G::AbstractVector{T}, x::AbstractVector{T}) where T
-    new{T}(H,D,G,copy(x))
-  end
+struct LinearObserver<: KalmanObserver
+  H::AbstractMatrix
+  D::AbstractVector
+  G::AbstractVector
 end
-function get_inner_state(observer::LinearObserver) observer.x end
-function set_inner_state!(observer::LinearObserver, x) observer.x .= x end
-#function (observer::LinearObserver)(state, error)
-#  observer.H * state.x + observer.D * state.u + observer.G * error
-#end
 
 function (observer::LinearObserver)(x::AbstractArray, u::Real, error)
   integrity_correction(observer.H * x + observer.D * u + observer.G * error)
@@ -70,8 +50,4 @@ Gn(observer::LinearObserver) = observer.G
 function kalman_size(observer::LinearObserver)
   H = Hn(observer)
   size(H')
-end
-
-function observe_real_state(observer::LinearObserver, control, error)
-  observer(get_inner_state(observer), control, error)
 end
