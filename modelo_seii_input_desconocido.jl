@@ -71,8 +71,9 @@ plot(ts, control_pieces.(ts), label = "Control real")
 # Definimos las estructuras necesarias para crear un `LinearKalmanIterator`.
 nlupdater = NLUpdater(rk,F,x0,0.4)
 nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces, 1.)
-observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
-iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer, dt)
+observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G)
+system = KalmanFilter.InnerState(tildex0)
+iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer, system, dt)
 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
 # en las variables que aparecen abajo.

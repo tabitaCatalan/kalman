@@ -47,7 +47,7 @@ tildeH = [H 0.]
 
 tildeP = [F * F' zeros(5); zeros(5)' 1.]
 
-dt = 0.05
+dt = 1.
 T = 50.
 N = Int(T/dt)
 
@@ -98,12 +98,13 @@ plot(ts, control_pieces.(ts), label = "Control real")
 
 
 #nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces, Fₐ)
-observer = KalmanFilter.LinearObserver(H, zeros(1), G, x0)
+observer = KalmanFilter.LinearObserver(H, zeros(1), G)
 #observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
 
 ensemble_size = 50
 states = get_initial_states(x0, 1.5, ensemble_size, a₀, false)
-enkf = KalmanFilter.EnKF(states, nlupdater, observer, dt)
+system = KalmanFilter.InnerState(x0)
+enkf = KalmanFilter.EnKF(states, nlupdater, observer, system, dt)
 
 results, ensamble = KalmanFilter.full_iteration(enkf, dt, N, control_pieces, ensemble_size)
 #Juno.@enter KalmanFilter.full_iteration(enkf, dt, N, control_pieces)

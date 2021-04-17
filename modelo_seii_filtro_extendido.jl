@@ -14,7 +14,7 @@ F = 50000. * ones(5)
 H = [0. 0. 0. 0. 1.]
 
 # Usaremos un error de unas 50.000 personas en las mediciones.
-G = [5e6]
+G = [5e4]
 dimensions = 5
 
 # Definimos las matrices ``\tilde{H}`` para nuestro sistema auxiliar, que incluirá al input.
@@ -26,7 +26,7 @@ tildeP = [F * F' zeros(5); zeros(5)' 1.]
 # donde estamos considerando una suposición inicial para el estado $\alpha = 1$.
 tildex0 = [x0; 0.4]
 
-dt = 0.05
+dt = 1.
 T = 50.
 N = Int(T/dt)
 
@@ -72,8 +72,9 @@ plot(ts, control_pieces.(ts), label = "Control real")
 nlupdater = NLUpdater(rk,F,x0,0.4)
 #nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces, 1.)
 #observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
-observer = KalmanFilter.LinearObserver(H, zeros(1), G, x0)
-iterator = KalmanFilter.LinearKalmanIterator(x0, F * F', nlupdater, observer, dt)
+observer = KalmanFilter.LinearObserver(H, zeros(1), G)
+system = KalmanFilter.InnerState(x0)
+iterator = KalmanFilter.LinearKalmanIterator(x0, F * F', nlupdater, observer, system, dt)
 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
 # en las variables que aparecen abajo.
