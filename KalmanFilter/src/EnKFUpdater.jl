@@ -15,6 +15,8 @@ mutable struct EnKF <: KalmanFilter.KalmanIterator
     N::Int
     """Control ``u_{n-1}`` usado para llegar al estado actual"""
     u::Real
+    """Sistema"""
+    system::ObservableSystem
     """Array de aproximaciones ``\\{ \\hat{x}^{(i)}_{n,n} \\}_i`` del estado real ``x_n``."""
     states_hatx # debería ser un vector de estados
     """
@@ -29,27 +31,27 @@ mutable struct EnKF <: KalmanFilter.KalmanIterator
     `KalmanUpdater` que permite actualizar tanto el estado interno como las
     aproximaciones. No es necesario usar un updater linealizable, aunque sea NL.
     """
-    updater::KalmanFilter.KalmanUpdater
+    updater::KalmanUpdater
     """
     Un observador lineal que entrega observaciones ``y_n`` del estado real.
     """
-    observer::KalmanFilter.LinearObserver
+    observer::LinearObserver
     """Una distribución que permite agregar ruido al sistema. Por defecto es
     una normal ``\\mathcal{N}(0,1)``."""
     noiser::UnivariateDistribution
 end
 
 
-function EnKF(states, updater, observer::KalmanFilter.KalmanObserver, dt = 1.)
+function EnKF(states, updater, observer::KalmanFilter.KalmanObserver, system::ObservableSystem, dt = 1.)
     N = length(states)
     kf, kc = KalmanFilter.kalman_size(observer)
     K_initialize = Array{Float64,2}(undef, kf, kc)
-    EnKF(0, N, 1., states, similar(states), K_initialize, updater, observer, Normal(0.,dt^2))
+    EnKF(0, N, 1., system, states, similar(states), K_initialize, updater, observer, Normal(0.,dt^2))
 end
 
 function update_inner_state!(enkf::EnKF, control)
     noise = rand(enkf.noiser)
-    update_real_state!(enkf.observer, enkf.updater, control, noise)
+    update_real_state!(enkf.system, enkf.updater, control, noise)
     enkf.u = control
 end
 
@@ -65,7 +67,9 @@ function forecast_observed_state!(enkf::EnKF, control)
     enkf.kalman_gain .= KalmanFilter.KalmanGain(enkf, hatPₙ₊₁ₙ)
 end
 
-observe_inner_system(enkf::EnKF) = observe_real_state(enkf.observer, enkf.u, rand(enkf.noiser))
+function observe_inner_system(enkf::EnKF)
+    observe_real_state(enkf.system, enkf.observer, enkf.u, rand(enkf.noiser))
+end
 
 function observe_forecasted_system(enkf::EnKF)
   enkf.observer.(enkf.states_next_hatx, enkf.u, 0.)

@@ -7,6 +7,7 @@ using DocStringExtensions
 include("states.jl")
 include("updaters.jl")
 include("observers.jl")
+include("observablesystem.jl")
 
 include("kalman.jl")
 
