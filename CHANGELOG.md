@@ -5,8 +5,14 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 
 ## Trabajo futuro 
 - Agregar un `KalmanObserver` que permita incorporar datos externos.
-
+- Mejorar la forma de separar `ObservableSystem` en según si cuentan con un estado interno.
 ## Unreleased
+
+## Versión `v0.7.0` - 2021-04-17
+- ![Added][badge-added] Se agrega el tipo abstracto `ObservableSystem`, que permite definir una interfaz común para el ingreso de datos al sistema, ya sea almacenando un estado interno mediante la estructura `InnerState`, o guardando solo observaciones mediante `Measurements`.
+- ![Changed][badge-changed] `LinearKalmanIterator` ahora guarda un `ObservableSystem`. Cambió la forma de actualizar y observar ese sistema.
+- ![Added][badge-added] Se agrega la página `Systems` a la documentación, explicando la interfaz de `ObservableSystem`. 
+- ![Changed][badge-changed] Se actualiza la documentación de `KalmanObserver` y `KalmanIterator`.
 
 ## Versión `v0.6.0`- 2021-04-16
 - ![Added][badge-added] Nueva estructura `EnsamblesStoring` para almacenar los ensambles durante la iteración de `EnKF`. 
@@ -15,7 +21,7 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 ## Versión `v0.5.1` - 2021-04-16
 - ![Fixed][badge-fixed] `EnKF` no actualizaba al `Updater` para ahorrar trabajo, pero esto sí era necesario (sobre todo con el updater que incluye un input desconocido). Se corrigió. Se necesita un updater más liviano.
 - ![Fixed][badge-fixed] Se agregan restricciones de integridad a los `KalmanUpdater` `NLUpdater` y `SimpleLinearUpdater`, pero de una mala forma, hay que corregirlo, lo que cambiará la interfaz de `KalmanUpdater`.
-- 
+
 ## Versión `v0.5.0` - 2021-04-13
 - ![Added][badge-added] Se agrega la estructura `FilteredSeries` para almacenar los resultados de la iteración de Kalman.
 - ![Added][badge-added] Se añade `RecipesBase` a las dependencias. 
