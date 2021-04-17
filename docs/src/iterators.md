@@ -1,6 +1,6 @@
 # Iteradores: KalmanIterator 
 
-Un iterador debe contener la información de un paso del filtro de kalman. Puede contar con un estado interno (para hacer pruebas por ejemplo, ver `LinearKalmanIterator`), o podría contar con información obtenida a partir de mediciones de un sistema físico real. 
+Un iterador debe contener la información de un paso del filtro de kalman. 
 
 La función `next_iteration!(iterator::KalmanIterator, control)` permite generar una nueva iteración, pero requiere que se implementen los siguientes métodos:
 
