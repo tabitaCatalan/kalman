@@ -12,6 +12,8 @@ function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, 
 function Mn(::KalmanUpdater) error("Mn no definida") end
 function Bn(::KalmanUpdater) error("Bn no definida") end
 function Fn(::KalmanUpdater) error("Fn no definida") end
+
+Qn(updater::KalmanUpdater) = Fn(updater) * Fn(updater)'
 ################################################################################
 
 function (updater::KalmanUpdater)(state::StochasticState, error)
@@ -21,6 +23,20 @@ end
 function integrity(x)
   max.(x, 0.)
 end
+
+function forecast(updater::KalmanUpdater, hatx, hatP, control)
+  hatPnp1 = forecast_hatP(updater, hatP)
+  hatxnp1 = update_aproximation(updater, hatx, control, 0.)
+  hatxnp1, hatPnp1
+end
+
+function forecast_hatP(updater::KalmanUpdater, hatP)
+  Mn(updater) * hatP * Mn(updater)' + Qn(updater)
+  #  - Sn(iterator) * inv(E) * Sn(iterator)'
+  #  - Sn(iterator) * K' * Mn(iterator)'
+  #  - Mn(iterator) * K * Sn(iterator)'
+end
+
 
 
 #= LinearUpdater define la interfaz de KalmanUpdater =#

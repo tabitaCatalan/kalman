@@ -15,12 +15,11 @@ function next_iteration!(iterator::KalmanIterator, control)
 
   forecast_observed_state!(iterator, control) #esto cambia next_hatX
 
-  # observe system
   yₙ₊₁ = observe_inner_system(iterator)
 
-  # analysis
   analyse!(iterator, yₙ₊₁)
 
+  # prepare structures for next iteration 
   update_updater!(iterator)
 
   yₙ₊₁
@@ -157,34 +156,8 @@ function update_updater!(iterator::LinearKalmanIterator)
   update!(iterator.updater, hatx(iterator), un(iterator))
 end
 
-
-
 function forecast(iterator::LinearKalmanIterator, control)
-  hatPₙₙ = hatP(iterator)
-  K = KalmanGain(iterator, hatPₙₙ)
-  E = En(iterator, hatPₙₙ)
-  hatPₙ₊₁ₙ = forecast_hatP(iterator, K, E, hatPₙₙ) # idem
-  hatxₙ₊₁ₙ = forecast_hatx(iterator, control) # aun no debe haber cambiado el analizado
-  hatxₙ₊₁ₙ, hatPₙ₊₁ₙ
-end
-
-function forecast_hatx(updater, hatx, control)
-  update_aproximation(updater, hatx, control, 0.)
-end
-
-function forecast_hatx(iterator::LinearKalmanIterator, control)
-  forecast_hatx(iterator.updater, hatx(iterator), control)
-end
-
-function forecast_hatP(iterator::LinearKalmanIterator, K, E, hatP)
-  Mn(iterator) * hatP * Mn(iterator)' + Qn(iterator)
-  #  - Sn(iterator) * inv(E) * Sn(iterator)'
-  #  - Sn(iterator) * K' * Mn(iterator)'
-  #  - Mn(iterator) * K * Sn(iterator)'
-end
-
-function forecast_hatP(iterator::LinearKalmanIterator)
-  forecast_hatP(iterator::LinearKalmanIterator, KalmanGain(iterator), En(iterator), hatP(iterator))
+  forecast(iterator.updater, hatx(iterator), hatP(iterator), control)
 end
 
 function forecast_observed_state!(iterator::LinearKalmanIterator, control)
