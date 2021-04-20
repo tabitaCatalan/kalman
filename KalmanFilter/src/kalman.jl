@@ -212,7 +212,7 @@ end
 """
 function full_iteration(iterator, dt, N, control_function, ensamble_size)
 
-  dimensions = length(get_inner_state(iterator.system))
+  dimensions = kalman_size(iterator.observer)[1]
 
   results = InnerStateSeries(N, dimensions)
   ensamble = EnsamblesStoring(ensamble_size, dimensions, N)
@@ -221,7 +221,7 @@ function full_iteration(iterator, dt, N, control_function, ensamble_size)
     control = control_function(i * dt)
     #observation = KalmanFilter.observe_inner_system(iterator)
     add_ensamble!(ensamble, i, iterator)
-    add_state!(results, i, get_inner_state(iterator.system))
+    #add_state!(results, i, get_inner_state(iterator.system))
     add_analysis!(results, i, hatx(iterator))
 
 

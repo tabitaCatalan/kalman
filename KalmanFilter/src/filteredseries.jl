@@ -84,6 +84,7 @@ end
     title --> titles[i]
     xguide --> "Tiempos t (días)"
     yguide --> "Personas"
+    #=
     if i ≠ 6
         @series begin
             seriestype := :path
@@ -99,14 +100,15 @@ end
         label --> "Análisis, con error 2σ"
         ribbon --> 2 * sqrt.(r.error_analysis[:,i])
         ts[rango], r.analysis[rango,i]
-    end
+    end =#
     @series begin
         seriestype := :path
-        a = :seriescolor
         label --> "Análisis, con error 1σ"
+        #label --> "Análisis, con error 1σ"
         ribbon --> sqrt.(r.error_analysis[:,i])
         ts[rango], r.analysis[rango,i]
     end
+    
     #=@series begin
         seriestype := :path
         label --> "Forecast"
