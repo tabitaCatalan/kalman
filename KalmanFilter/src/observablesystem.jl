@@ -45,7 +45,7 @@ function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, e
 end 
   
 function observe_real_state(ms::Measurements, observer::KalmanObserver, control, error)
-    ms.measurements[ms.n]
+    ms.measurements[ms.n:ms.n]
 end
 
 #= 
