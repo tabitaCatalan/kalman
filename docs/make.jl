@@ -6,7 +6,7 @@ deployconfig = Documenter.auto_detect_deploy_system()
 makedocs(modules=[KalmanFilter],
          doctest=false, clean=true,
          #format = Documenter.HTML(canonical="https://tabitaCatalan/kalman/stable"),
-         format = Documenter.HTML(prettyurls=false),
+         format = Documenter.HTML(prettyurls=true),
          sitename="KalmanFilter.jl",
          authors="Tabita Catalán",
          pages = Any[
