@@ -2,3 +2,7 @@
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 KalmanFilter = "029cf172-920f-439e-9720-f85cfe1b76b6"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+
+
+[compat]
+Documenter = "0.26"
