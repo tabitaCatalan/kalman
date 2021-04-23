@@ -22,6 +22,10 @@ Métodos a implementar | Breve descripción
 `Hn`, `Dn`, `Gn` | las matrices/vectores ``H, D, G`` respectivamente. Por ahora serán constantes.
 `(ob::KalmanObserver)(x::AbstractArray, u::Real, error)` | Este método permite evaluar el `KalmanObserver` en un estado `x`. Se usa para hacer una observación del sistema aproximado, evaluando en ``\hat{x_n}`` y el control ``u_n`` para devolver una observación ``\hat{y}_n``.
 
+En general los constructores pedirán además una **función de integridad**; cuya idea es evitar que las observaciones entreguen resultados sin sentido físico, transformándolas para dejarlas dentro de cierto dominio. Por ejemplo, si trabajamos con EDOs epidemiológicas, y nuestras observaciones corresponden al número de infectados, no tiene sentido que este sea un valor negativo, por lo que podría usarse la función de integridad `(y) -> max.(y, 0.)`, que transforma un vector de observaciones `y`, dejando en 0 las coordenadas negativas.
+
+
+
 ## LinearObserver 
 
 Una estructura sencilla que implementa todos los métodos anteriores es `LinearObserver`.

@@ -12,10 +12,13 @@ Para que funciones correctamente deben implementarse los siguientes métodos:
 
 Métodos a implementar | Breve descripción
 --- | ---
-`update!(L::KalmanUpdater, hatx, control)` | un método que permita actualizar al iterador y dejarlo listo para la siguiente iteración. Cuando se usan matrices ``M_n := M, B_n := B, F_n:= F`` contantes se puede dejar en blanco, pero debería usarse, por ejemplo, para linearlizar en torno a ``\hat{x}_n`` cuando se usa un `KalmanUpdater` no lineal.
+`update!(L::KalmanUpdater, hatx, hatP, control)` | un método que permita actualizar al iterador y dejarlo listo para la siguiente iteración. Cuando se usan matrices ``M_n := M, B_n := B, F_n:= F`` contantes se puede dejar en blanco, pero debería usarse, por ejemplo, para linearlizar en torno a ``\hat{x}_n`` cuando se usa un `KalmanUpdater` no lineal.
 `Mn`, `Bn`, `Fn`| De la linearización en el estado actual
 `(::KalmanUpdater)(x::AbstractArray, u::Real, error)` | Debe poder evaluarse en esa firma. Por ejemplo, para el caso no lineal, `udpater(x,u,ε)` podría devolver ``\mathcal{M}(x,u) + Fε``.
-`forecast((updater::KalmanUpdater, hatx, hatP, control)` | Devuelve una tupla que contiene a ``\hat{x}_{n+1, n}, \hat{P}_{n+1, n}`` a partir de ``\hat{x}_{n,n}``(`hatx`), ``\hat{P}_{n,n}``(`hatP`) y un control.
+`forecast(updater::KalmanUpdater, hatx, hatP, control)` | Devuelve una tupla que contiene a ``\hat{x}_{n+1, n}, \hat{P}_{n+1, n}`` a partir de ``\hat{x}_{n,n}``(`hatx`), ``\hat{P}_{n,n}``(`hatP`) y un control.
+
+En general los constructores pedirán además una **función de integridad**; cuya idea es evitar que los estados se salgan de cierto dominio. Por ejemplo, para el caso en que trabajamos con EDOs epidemiológicas, es necesario que las cantidades sean no negativas, por lo que se usa la función de integridad `(x) -> max.(x, 0.)`, que transforma un vector `x` para dejar en 0 las coordenadas negativas.
+
 ## SimpleLinearUpdater
 
 ```@docs
