@@ -110,10 +110,10 @@ Mn(nl::NLUpdaterUnknowInput) = Mn(nl.linear)
 Bn(nl::NLUpdaterUnknowInput) = Bn(nl.linear)
 Fn(nl::NLUpdaterUnknowInput) = Fn(nl.linear)
 
-function update!(nl::NLUpdaterUnknowInput, hatX, control)
+function update!(nl::NLUpdaterUnknowInput, hatX, hatP, control)
   hatx = hatX[1:end-1]
   hatu = hatX[end]
-  update!(nl.state_updater, hatx, hatu)
+  update!(nl.state_updater, hatx, hatP, hatu)
   nl.linear = linearize_augmented_state(nl.state_updater, nl.Fa)
   nl.n += 1
 end

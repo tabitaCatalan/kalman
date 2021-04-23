@@ -37,7 +37,7 @@ mutable struct NLUpdater <: KalmanUpdater
 end
 
 
-function update!(updater::NLUpdater, x, α) #NLupdater = NonLinearUpdater(fancyM, jacobian_x)
+function update!(updater::NLUpdater, x, P, α) #NLupdater = NonLinearUpdater(fancyM, jacobian_x)
   linear = linearize_x(updater, x, α)
   updater.linear = linear
 end

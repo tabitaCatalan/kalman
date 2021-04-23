@@ -153,7 +153,7 @@ function observe_observed_system(iterator::LinearKalmanIterator)
 end
 
 function update_updater!(iterator::LinearKalmanIterator)
-  update!(iterator.updater, hatx(iterator), un(iterator))
+  update!(iterator.updater, hatx(iterator), hatP(iterator), un(iterator))
 end
 
 function forecast(iterator::LinearKalmanIterator, control)

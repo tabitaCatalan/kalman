@@ -82,7 +82,7 @@ function analyse!(enkf::EnKF, observation)
 end
 
 function update_updater!(enkf::EnKF)
-    update!(enkf.updater, hatx(enkf), enkf.u)
+    update!(enkf.updater, hatx(enkf), hatP(enkf), enkf.u)
 end
 
 hatx(enkf::EnKF) = mean(enkf.states_hatx)
