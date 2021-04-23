@@ -1,0 +1,91 @@
+Verificación:
+  ✔ `Sn` debería ser 0, las covarianzas cruzadas suelen serlo en los casos sencillos @critical @done(21-04-07 09:51)
+  ✔ Revisar que la varianza crece después del forecast y decrece con el análisis @done(21-03-30 12:37)
+  ✔ Poder usar `alpha` distinto de 1 @done(21-03-31 16:47)
+  ✔ Qué ocurre al usar un `alpha` variable en el tiempo? @done(21-03-31 16:47)
+  ✔ Arreglar el código, desde guardar el estado forecast al estado analizado. @done(21-03-31 10:34)
+  ✔ Programar caso no lineal con input desconocido @critical @done(21-04-07 09:51)
+
+
+
+Versión 0.3.0:
+  ✔ Cambiar el funcionamiento de observer. La idea es retirar el trackeo del estado interno del `Iterador` y agregarlo al `Observer`. Esto permite usar observers sin estado interno! lo que me permite hacer observers que usen datos de mediciones de un sistema físico. @done(21-04-08 19:02)
+    ✔ Definir una nueva interfaz para `Observer` @done(21-04-08 18:21)
+    ✔ Hacer que `Iterator` ocupe esta interfaz @done(21-04-08 19:02)
+    ✔ Función que reciba un `Updater` y actualice el estado interno. @done(21-04-08 18:21)
+    
+
+Versión 0.4.0: 
+  ✔ Agregar `EnKF`, un nuevo `Iterator` que permite trabajar con ensambles en lugar de con un único estado. La idea de `Iterator` es guardar el/los estados aproximados. @critical @done(21-04-09 11:42)
+    ✔ `update_inner_state` debería heredarse al `KalmanObserver`. @done(21-04-09 11:06)
+    ✔ Creo que este es el único paso que es notoriamente diferente del resto. Para `forecast_observed_state!`. @done(21-04-09 11:42)
+      ✔ 1. Supongo que tengo guardado el estado analizado y todos los estados analizados del ensamble. @done(21-04-09 11:42)
+      ✔ 2. Forcasteo todo el ensamble a partir del estado analizado en que ellos estén. Esto me da un sampleo de la distribución a priori. @done(21-04-09 11:14)
+      ✔ 3. Calculo la media y la covarianza de sampleo. La media será mi estimación de forecast. @done(21-04-09 11:17)
+      ✔ 4. Calculo la matriz de ganancia de Kalman aproximada a partir de la estimación de covarianza del forecast. @done(21-04-09 11:21)
+    ✔ `observe_inner_system` debería delegarse al `KalmanObserver`. @done(21-04-09 11:27)
+    ✔ Para `analyse`, observo a cada uno del ensamble y uso la ganancia de Kalman única para actualizarlos a la versión analizada. Puedo sacar el promedio, lo que me da mi estimación del análisis. @done(21-04-09 11:33)
+    ✔ Al hacer `update_updater!` tengo que tener cuidado... Cómo voy a manejar el ensamble? Mi `NLUpdater` guarda info del sistema linealizado, que en este caso no me servirá de nada. Supongo que puedo hacer una versión muy similar, pero que no guarde esa info. (Tal vez deberían heredar ambos de un tipo abstracto). PARA ESTO NO SE NECESITA UN UPDATER LINEALIZABLE! @done(21-04-09 11:42)
+  
+Versión 0.5.0: 
+  ✔ Hacer estructura para los resultados, y para poder graficarlos fácilmente (una por iterador, para `LinearKalmanIterator` no debería ser difícil, `EnKF` va a dar más problemas). (Ojalá esto resolviera el problema que ocurre a veces al resolver las edos...) @done(21-04-12 13:10)
+  ✔ Corrección de error con estructura `Observer` @done(21-04-12 18:14)
+  ✔ Restricciones de integridad, dominio, al resolver la EDO @done(21-04-13 08:57)
+  ✔ El ruido debe depender del tamaño de la discretización (distribución N(0, dt), ver método Euler-Maguyama) @done(21-04-13 10:56)
+  ✔ Corregir `EnKF`, está dando cosas raras. @done(21-04-16 15:33)
+  ✔ Necesito métodos de ploteo adecuado para `EnKF`. Lo idel en mi opinión sería graficar todas las trayectorias muy finas en gris (no transparente... o tal vez sí, hay que ver), y graficar el promedio en una línea más gruesa y de color. @started(21-04-15 10:53) @done(21-04-16 11:57) @lasted(1d1h4m20s)
+  
+
+Versión 0.6.0:
+  ✔ Agregar un `Observer` que reciba datos reales. @critical @today @done(21-04-19 10:10)
+    Esto debería ser simple, la actualización en lugar de usar al updater, simplemente usa el siguiente dato.
+    ☐ Intentar esto dándole resultados de una EDO, demás que sirve para usar un solo observer. 
+  Creo que para esto haré un cambio en la interfaz de `KalmanObserver`. Renombraré el tipo abstracto como `LinearizableObserver`, el que tendrá la interfaz `Hn`, `Dn`, `Gn`. Pero no quiero tener que estar haciendo uno nuevo cada vez que quiero trabajar con mediciones distintas. Preferiría poder aislar al sistema, en un tipo abstracto `ObservableSystem` o algo así, que contenga las mediciones hechas (podría ser simplemente un vector de mediciones) o que contenga un sistema ficticio que pueda ser actualizado por algún `KalmanUpdater`. Este sistema necesitaría una interfaz, a la que accedería desde `LinearizableObserver`. Debería contar con la función `observe_real_state`, que es la realmente importante. Opcionalmente, para el caso en que sea un sistema interno, sería necesario definir además `get_inner_state` y `set_inner_state`.
+  Creo que ya decidí cómo hacerlo. Ahora que hice una interfaz para el sistema, puedo dejarlo en el iterador creo. Puedo hacer un constructor más sencillo al que solo le pongo la condición inicial. 
+  Esto tiene muchas más ventajas! Para actualizarlo no necesitaré pasar por el updater, y para observarlo no tendré que hacer un if muy raro dentro del observer. 
+  La interfaz del sistema debería ser algo así: 
+    observe_real_state(system, observer, control, error), lo que retorna la observación 
+    update_real_state!(system, updater, control, error) lo que actualiza el sistema interno si existe (o el n de la medición).
+    ✔ Definir la interfaz para system @done(21-04-17 10:56)
+    ✔ Eliminar de observer los rastros del sistema @done(21-04-17 10:56)
+    ✔ Añadir los cambios a iterator @done(21-04-17 10:56)
+    ✔ Documentar la estructura nueva y las nuevas interfaces para `KalmanObserver`, `KalmanIterator`, `ObservableSystem`. @done(21-04-19 09:21)
+    
+Versión 0.8.0: 
+  ☐ Agregar un nuevo `Updater` que permita usar filtro de kalman continuo-discreto, actualizado `hatP` con una EDO. 
+    ✔ Leer paper del filtro de kalman continuo discreto @done(21-04-22 09:24)
+    ✔ Ver qué necesito para implementarlo... creo que podría usar los discretizers que ya tenía. @done(21-04-22 09:24)
+      ✔ Usar discretizer para hacer un solver de ODE @done(21-04-22 09:24)
+    ✔ Hacer Rk4 sin Dx @done(21-04-20 10:25)
+    ✔ Un discretizador para dP/dt @done(21-04-22 09:25)
+    ✔ Y otro para dhatx/dt @done(21-04-22 09:25)
+    No va a bastar con el updater nuevo, la estructura de kalman está hecha pensada en sistema linealizables, que no será el caso esta vez.... 
+    ✔ Cambiar forecast desde iterator a updater @done(21-04-20 17:03)
+    ✔ Debuggear el `ODEForecaster`, está dando cosas raras (susceptibles que suben....) @done(21-04-23 15:37)
+    ✔ Tuve la idea de hacer el estado aumentado con el `ODEForecaster`, hay algo que no está funcionando (pero antes tampoco). Hice [x', u'] = [f(x,u), 0.] (la dinámica dice que u se mantiene constante). @done(21-04-23 15:37)
+    ☐ Usar un solver que mantenga la semipositividad de la la matrix hatP(t).
+  
+
+Versiones futuras:  
+  ☐ `LinearizableUpdater` debe usarse... `ODEForecaster` no es de ese tipo. Tal vez separar updater de forecaster (algunos son ambos, ciertos métodos solo necesitan uno)
+  ☐ Hacer comparación usando la misma solución, (no una random, sino la real solución.).
+  ✔ Sospecho fuertemente de mi cálculo de covarianza. Hay que revisar, debería hacer un test para eso. @critical @done(21-04-15 10:28)
+    Hice el test y la covarianza está bien
+  ☐ Hay que hacer una versión de `NLUpdater` que no linearice en cada paso, que sea más liviana para `EnKF`.
+  
+  
+  ☐ Hacer un refactoring del código, incluyendo _holy traits_ para diferenciar ciertas carácteristicas como la existencia de un estado interno para observer, o si el `KalmanUpdater` es linealizables o no.
+  ☐ OJO CON LOS ERRORES..... GQ*G'
+  ✔ Necesito un patch también del error incremental en el solver de la EDO estocástica. CREO QUE ESTÁ CORREGIDO @done(21-04-13 14:22)
+  ✔ Hacer una estructura para mostrar los resultados. Quizá eso resuelva el error de que la EDO funciona y a veces no. @done(21-04-15 11:52)
+  ☐ Más generalidad a las restricciones de integridad.
+  ✔ Restricciones de integridad al updater @done(21-04-15 11:52)
+
+Lectura: 
+  ✔ Leer de Ensemble Kalman @critical @done(21-04-09 15:55)
+
+Documentación: 
+  ✔ Aprender a usar Documenter.jl @done(21-03-26 15:03)
+  ✔ Hacer documentación local @done(21-04-08 11:48)
+  ✔ Hacer ejemplos con Literate.jl @done(21-04-08 11:48)
+  ☐ Hostear la documentación en GitHub pages 

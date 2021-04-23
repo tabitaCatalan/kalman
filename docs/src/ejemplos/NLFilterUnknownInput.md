@@ -93,7 +93,7 @@ Definimos un vector de condiciones iniciales ``x_0``.
 
 ```@example NLFilterUnknownInput
 x0 = [7.112808e6, 1046.8508799517147, 0.0, 521.963080420307, 0.0]
-F = 1000. * ones(5)
+F = 100. * ones(5)
 ```
 
 Solo consideraremos conocida la cantidad total de infectados ``\mathbf{x}_5 = cI``.
@@ -105,7 +105,7 @@ H = [0. 0. 0. 0. 1.]
 Usaremos un error de unas 50.000 personas en las mediciones.
 
 ```@example NLFilterUnknownInput
-G = [50000.]
+G = [500.]
 dimensions = 5
 ```
 
@@ -121,10 +121,10 @@ EL nuevo vector de estados será ``\tilde{\mathbf{x}} = \begin{pmatrix} \mathbf{
 donde estamos considerando una suposición inicial para el estado $\alpha = 1$.
 
 ```@example NLFilterUnknownInput
-tildex0 = [x0; 1.]
+tildex0 = [x0; 0.4]
 
-dt = 0.2
-T = 100.
+dt = 0.05
+T = 30.
 N = Int(T/dt)
 ```
 
@@ -157,15 +157,15 @@ averiguar) será la función constante por pedazos `control_pieces`.
 ```@example NLFilterUnknownInput
 function control_pieces(t)
     if t < 5.
+        1.
+    elseif t >= 5. && t < 12.
+        0.8
+    elseif t >= 12. && t < 25.
         0.5
-    elseif t >= 5. && t < 10.
-        0.5
-    elseif t >= 10. && t < 15.
-        1.1
-    elseif t >= 15. && t < 20.
+    elseif t >= 25. && t < 40.
         1.5
-    elseif t >= 20.
-        2.5
+    elseif t >= 40.
+        1.
     end
 end
 ```
@@ -180,53 +180,22 @@ plot(ts, control_pieces.(ts), label = "Control real")
 Definimos las estructuras necesarias para crear un `LinearKalmanIterator`.
 
 ```@example NLFilterUnknownInput
-nlupdater = NLUpdater(rk,F,x0,1.)
-nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces)
-observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
-iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer)
+nlupdater = NLUpdater(rk,F,x0,0.4)
+nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces, 1.)
+observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G)
+system = KalmanFilter.InnerState(tildex0)
+iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer, system, dt)
 ```
 
 Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
 en las variables que aparecen abajo.
 
 ```@example NLFilterUnknownInput
-observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, dt, N, t -> 0.)
+results, ensamble = KalmanFilter.full_iteration(iterator, dt, N, t -> 0., 1)
 ```
 
 ## Resultados
 Graficaremos los estados internos considerados, y los resultados obtenidos.
-
-```@example NLFilterUnknownInput
-rango = 1:floor(Int,length(ts))
-```
-
-Definimos unas funciones horribles para acortar el proceso
-
-```@example NLFilterUnknownInput
-function plotstate!(a_plot, state_index, ts, rango = 1:length(ts); labels = ["Real", "Kalman analysed", "Kalman forecast"])
-  i = state_index
-  dimensions = size(real_states)[2]
-  nans = NaN * ones(dimensions)'
-  errors_forecast_correction = [nans; errors_forecast[1:end-1,:]]
-  forecast_correction = [nans; forecast[1:end-1,:]]
-  if i ≠ 6
-    plot!(a_plot, ts[rango], real_states[rango,i], label = labels[1])
-  end
-  #plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2])
-
-  plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2], ribbon = 2 * sqrt.(abs.(errors_analysis[rango,i])))
-  plot!(a_plot, ts[rango], analysis[rango,i], label = labels[2], ribbon = sqrt.(abs.(errors_analysis[rango,i])))
-  #plot!(a_plot, ts[rango], forecast_correction[rango,i], label = labels[3], ribbon = sqrt.(abs.(errors_forecast_correction[rango,i])))
-  a_plot
-end
-
-function plot_error(state_index, state_name)
-  i = state_index
-  a_plot = plot(title = "Error " * state_name)
-  plot!(a_plot, ts[1:end-1], sqrt.(errors_analysis[2:end,i]), label = "Analysis")
-  plot!(a_plot, ts, sqrt.(errors_forecast[:,i]), label = "Forecast")
-end
-```
 
 Ahora podemos graficar los diferentes estados de nuestro sistema, así como las
 aproximaciones obtenidas con filtro de Kalman.
@@ -234,48 +203,42 @@ aproximaciones obtenidas con filtro de Kalman.
 Susceptibles ``S``
 
 ```@example NLFilterUnknownInput
-a_plot = plot(title = "Susceptibles")
-plotstate!(a_plot, 1, ts)
+plot(results, ts, 1)
 ```
 
 Expuestos ``E``
 
 ```@example NLFilterUnknownInput
-a_plot = plot(title = "Expuestos")
-plotstate!(a_plot, 2, ts)
+plot(results, ts, 2)
 ```
 
 Infectados asintomáticos *mild* ``I^m``
 
 ```@example NLFilterUnknownInput
-a_plot = plot(title = "Mild")
-plotstate!(a_plot, 3, ts)
+plot(results, ts, 3)
 ```
 
 Infectados ``I``
 
 ```@example NLFilterUnknownInput
-a_plot = plot(title = "Infectado")
-plotstate!(a_plot, 4, ts)
+plot(results, ts, 4)
 ```
 
 Infectados acumulados ``cI``, y las observaciones que hicimos de él.
 
 ```@example NLFilterUnknownInput
-a_plot = plot(title = "Acumulados")
-plotstate!(a_plot, 5, ts)
-plot!(ts[rango], observations[rango], label = "Observaciones", legend =:bottomright)
+plot(results, ts, 5)
 ```
 
 Finalmente, veamos el control usado y el aproximado
 
 ```@example NLFilterUnknownInput
-a_plot = plot(title = "Control")
-plot!(ts, control_pieces.(ts), label = "Control real")
-plotstate!(a_plot, 6, ts)
+plot(ts, control_pieces.(ts), label = "Control real")
+plot!(results, ts, 6)
 ```
 
-Notamos que tras una cierta cantidad de tiempo es posible averiguarlo con bastante certeza.
+Notamos que tras una cierta cantidad de tiempo es posible averiguar el control
+Aunque hay bastante incerteza de los resultados.
 
 ---
 
