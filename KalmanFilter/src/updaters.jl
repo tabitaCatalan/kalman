@@ -20,10 +20,6 @@ function (updater::KalmanUpdater)(state::StochasticState, error)
   updater(state.x, state.u, error)
 end
 
-function integrity(x)
-  max.(x, 0.)
-end
-
 function forecast(updater::KalmanUpdater, hatx, hatP, control)
   hatPnp1 = forecast_hatP(updater, hatP)
   hatxnp1 = update_aproximation(updater, hatx, control, 0.)
@@ -62,11 +58,13 @@ struct SimpleLinearUpdater{T} <: KalmanUpdater
   B::AbstractVector{T}
   """Vector ``F``"""
   F::AbstractVector{T}
+  """Función que corrige `x` para dejarlo dentro de un dominio."""
+  integrity
 end
 
 
 function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, error)
-  integrity(updater.M * x + updater.B * u + updater.F * error)
+  updater.integrity(updater.M * x + updater.B * u + updater.F * error)
 end
 
 update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
