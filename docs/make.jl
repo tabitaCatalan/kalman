@@ -18,3 +18,7 @@ makedocs(modules=[KalmanFilter],
                             "ejemplos/NLFilter.md", 
                             "ejemplos/NLFilterENKF.md"],
          ])
+
+deploydocs(
+    repo = "github.com/tabitaCatalan/kalman.git",
+)
