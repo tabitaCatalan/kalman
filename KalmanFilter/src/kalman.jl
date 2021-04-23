@@ -107,16 +107,16 @@ end
 
 # Getters de matrices y fórmulas para actualizar y todo eso
 
-Mn(iterator::KalmanIterator) = Mn(iterator.updater)
-Bn(iterator::KalmanIterator) = Bn(iterator.updater)
-Fn(iterator::KalmanIterator) = Fn(iterator.updater)
+#Mn(iterator::KalmanIterator) = Mn(iterator.updater)
+#Bn(iterator::KalmanIterator) = Bn(iterator.updater)
+#Fn(iterator::KalmanIterator) = Fn(iterator.updater)
 Hn(iterator::KalmanIterator) = Hn(iterator.observer)
 Dn(Iterator::KalmanIterator) = Dn(Iterator.observer)
 Gn(Iterator::KalmanIterator) = Gn(Iterator.observer)
 
-Sn(iterator::KalmanIterator) = Fn(iterator) * Gn(iterator)'
+#Sn(iterator::KalmanIterator) = Fn(iterator) * Gn(iterator)'
 Rn(iterator::KalmanIterator) = Gn(iterator) * Gn(iterator)'
-Qn(iterator::KalmanIterator) = Fn(iterator) * Fn(iterator)'
+#Qn(iterator::KalmanIterator) = Fn(iterator) * Fn(iterator)'
 
 #xn(iterator::LinearKalmanIterator) = iterator.X.x
 un(iterator::LinearKalmanIterator) = iterator.u
