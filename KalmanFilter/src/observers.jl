@@ -5,15 +5,6 @@
 
 abstract type KalmanObserver end
 
-"""//TODO debería ser un input de observer
-Corrige al vector de estado x para que se obtengan resultados dentro de cierto
-dominio. Para el caso donde el estado proviene de una EDO epidemiológica, los
-resultados deben ser no negativos.
-"""
-function integrity_correction(x)
-  max.(x, 0.)
-end
-
 
 function (observer::KalmanObserver)(x::AbstractArray, u::Real, error) error("Evaluation method not defined") end
 function Hn(::KalmanObserver) error("Hn no definida") end
@@ -37,10 +28,15 @@ struct LinearObserver<: KalmanObserver
   H::AbstractMatrix
   D::AbstractVector
   G::AbstractVector
+  """Función que recibe una observación `y` y la corrige para dar valores razonables.
+  Por ejemplo, para el caso de observar un sistema epidemiológico, no tiene sentido 
+  que una variable sea negativa. Se podría definir `integrity(y) = max.(y,0.)`.
+  """
+  integrity
 end
 
 function (observer::LinearObserver)(x::AbstractArray, u::Real, error)
-  integrity_correction(observer.H * x + observer.D * u + observer.G * error)
+  observer.integrity(observer.H * x + observer.D * u + observer.G * error)
 end
 
 Hn(observer::LinearObserver) = observer.H

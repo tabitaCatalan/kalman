@@ -22,15 +22,17 @@ mutable struct NLUpdater <: KalmanUpdater
   discretizer::Discretizer
   F
   linear::SimpleLinearUpdater
+  integrity
   """
   $(TYPEDSIGNATURES)
   Constructor de un actualizador no lineal `NLUpdater`.
   # Argumentos
-  -
+  - `integrity`: función que transforma un vector `x` para que cumple ciertas 
+    restricciones de integridad (ser positivo, etc).
   """
-  function NLUpdater(discretizer, F, x0, α)
+  function NLUpdater(discretizer::Discretizer, F, x0, α, integrity)
     linear = linearize_x(discretizer, F, x0, α)
-    new(discretizer, F, linear)
+    new(discretizer, F, linear, integrity)
   end
 end
 
@@ -52,7 +54,7 @@ Fn(updater::NLUpdater) = Fn(updater.linear)
 
 
 function (updater::NLUpdater)(x::AbstractArray, u::Real, error)
-  integrity(updater.discretizer(x, u) + updater.F * error)
+  updater.integrity(updater.discretizer(x, u) + updater.F * error)
 end
 
 update_inner_system(updater::NLUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
