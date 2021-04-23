@@ -1,6 +1,8 @@
 using Documenter
 using KalmanFilter
 
+deployconfig = Documenter.auto_detect_deploy_system()
+
 makedocs(modules=[KalmanFilter],
          doctest=false, clean=true,
          #format = Documenter.HTML(canonical="https://tabitaCatalan/kalman/stable"),
@@ -21,4 +23,5 @@ makedocs(modules=[KalmanFilter],
 
 deploydocs(
     repo = "github.com/tabitaCatalan/kalman.git",
+    deploy_config = deployconfig,
 )
