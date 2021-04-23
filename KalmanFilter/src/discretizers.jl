@@ -33,6 +33,24 @@ abstract type RK4 <: Discretizer end
 
 """
 $(TYPEDEF)
+Define un `Discretizer` con el método Runge-Kutta de orden 4.
+# Campos
+$(FIELDS)
+"""
+struct SimpleRK4 <: RK4
+  """
+  La función tal que ``x' = f(x,\\alpha, p)``, donde ``x`` es el estado,
+  ``\\alpha `` un control, y ``p`` son parámetros extra.
+  """
+  f
+  """Parámetros extra ``p``."""
+  p
+  """Tamaño del paso temporal ``\\Delta t``, tal que ``t_{n+1} = t_n + \\Delta t``."""
+  dt
+end
+
+"""
+$(TYPEDEF)
 Define un `Discretizer` con el método Runge-Kutta de orden 4, que permite ser
 diferenciado con respecto a la variable ``x``.
 # Campos
