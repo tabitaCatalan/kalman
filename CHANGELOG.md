@@ -8,6 +8,13 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 - Mejorar la forma de separar `ObservableSystem` en según si cuentan con un estado interno.
 ## Unreleased
 
+## Versión `v0.8.0` - 2021-04-23
+- ![Added][badge-added] Se agrega `ODEForecaster`, un nuevo `KalmanUpdater` que permite hacer una predicción del siguiente estado resolviendo las ecuaciones de momento del filtro de Kalman continuo-discreto.
+- ![Changed][badge-changed] Se cambia los constructores de varios `KalmanObserver` y `KalmanUpdater`, para permitir al usuario definir una función de integridad. 
+- ![Changed][badge-changed] Se cambia la interfaz de `KalmanUpdater` para asignarle la función de hacer el *forecast* a partir de `hatx` y `hatP`. Sujeto a cambios, hay que revisar teóricamente.
+- ![Added][badge-added] Se agrega `SimpleRK4`, un `Discretizer` de tipo `RK4` que solo requiere una función `f` (y no sus derivadas).
+- ![Fixed][badge-fixed] Se corrige un error en `Measurements`, entregaba observaciones escalares en lugar de vectores. (Esto debió ser una versión nueva).
+
 ## Versión `v0.7.0` - 2021-04-17
 - ![Added][badge-added] Se agrega el tipo abstracto `ObservableSystem`, que permite definir una interfaz común para el ingreso de datos al sistema, ya sea almacenando un estado interno mediante la estructura `InnerState`, o guardando solo observaciones mediante `Measurements`.
 - ![Changed][badge-changed] `LinearKalmanIterator` ahora guarda un `ObservableSystem`. Cambió la forma de actualizar y observar ese sistema.
