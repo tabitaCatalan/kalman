@@ -1,57 +1,56 @@
 #using KalmanFilter
+using ComponentArrays
 
 # Usar misma estructura que differential equations... preservar interfaz
 mutable struct ODEForecaster <: KalmanFilter.KalmanUpdater
     dt 
     n_steps::Int 
-    xn
-    Pn 
-    discret_hatx::KalmanFilter.Discretizer
-    discret_hatP::KalmanFilter.Discretizer
+    Xn::ComponentArray 
+    discret_system::KalmanFilter.Discretizer
+    discret_momentum::KalmanFilter.Discretizer
     """Función que corrige un estado `x` para dejarlo dentro de cierto dominio."""
     integrity
 end
 
+
+
+
+
+
 function ODEForecaster(dt, n_steps, x0, F, f, Dxf, p, integrity)
     P0 = F * F'
-    discret_hatx = KalmanFilter.RK4Dx(f, Dxf, p, dt/n_steps)
-    discret_hatP = momentumP(discret_hatx, n_steps, P0, F)
-    ODEForecaster(dt, n_steps, copy(x0), P0, discret_hatx, discret_hatP, integrity)
+    discret_system = KalmanFilter.RK4Dx(f, Dxf, p, dt/n_steps)
+    discret_momentum = momentum(discret_system, F)
+    X0 = ComponentArray(x=x0, P= F* F')
+    ODEForecaster(dt, n_steps, X0, discret_system, discret_momentum, integrity)
 end 
 
 # tengo que asegurar que el discretizer usa un dt más chico... 
 
 #small_dt(odefor::ODEForecaster) = odefor.dt / odefor.n_steps 
 
-function next_xn!(xn, odefor::ODEForecaster, control)
-    xn .= odefor.discret_hatx(xn, control)
-end 
-function next_Pn!(Pn, odefor::ODEForecaster, control)
-    Pn .= odefor.discret_hatP(Pn, control)
+function next_Xn!(Xn, odefor::ODEForecaster, control)
+    set_Xn!(odefor, odefor.discret_momentum(Xn, control))
 end 
 
-function set_xn!(odefor::ODEForecaster, xn)
-    odefor.xn .= xn 
-end 
-function set_Pn!(odefor::ODEForecaster, Pn)
-    odefor.Pn .= Pn 
+function set_Xn!(odefor::ODEForecaster, Xn)
+    odefor.Xn.x .= Xn.x
+    odefor.Xn.P .= Xn.P 
 end 
 
 ## Para darle la interfaz de KalmanUpdater 
 function update!(odefor::ODEForecaster, hatx, hatP, control) 
-    set_xn!(odefor, hatx)
-    set_Pn!(odefor, hatP)
-    (p, P, F) = odefor.discret_hatP.p 
-    odefor.discret_hatP = momentumP(odefor.discret_hatx, odefor.n_steps, hatP, F)
+    set_Xn!(odefor, ComponentArray(x = hatx, P = hatP))
+    (p, F) = odefor.discret_momentum.p 
+    odefor.discret_momentum = momentum(odefor.discret_system, F)
 end
 
 function forecast(odefor::ODEForecaster, hatx, hatP, control)
-    x_actual = copy(odefor.xn); P_actual = copy(odefor.Pn)
+    X_actual = ComponentArray(x = hatx, P = hatP)
     for n in 1:odefor.n_steps
-        next_xn!(x_actual, odefor, control)
-        next_Pn!(P_actual, odefor, control)
+        next_Xn!(X_actual, odefor, control)
     end 
-    odefor.integrity(x_actual), P_actual
+    odefor.integrity(X_actual.x), X_actual.P
 end 
 # confío en que no la van a llamar... solo debería usarse con measurements,
 # NO con InnerState  
@@ -67,13 +66,14 @@ function (updater::ODEForecaster)(x::AbstractArray, u::Real, error)end
 # (ds::Discretizer, x, α)
 
 # cuento con ds::Discretizer 
-function momentumP(ds::KalmanFilter.Discretizer, n_steps, P, F)    
-    function f(x, a, tildep)
-        p, P, F = tildep
-        dxFP = ds.Dxf(x, a, p) * P
-        dxFP + dxFP' + F * F'
+function momentum(ds::KalmanFilter.Discretizer, F)    
+    function f(X, a, tildep)
+        p, F = tildep
+        dx = ds.f(X.x, a, p)
+        dxFP = ds.Dxf(X.x, a, p) * X.P
+        ComponentArray(x = dx, P = dxFP + dxFP' + F * F')
     end 
-    tildep = (ds.p, P, F)
+    tildep = (ds.p, F)
     KalmanFilter.SimpleRK4(f, tildep, ds.dt)
 end 
 
