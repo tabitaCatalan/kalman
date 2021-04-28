@@ -43,7 +43,20 @@ function forecast_hatP(updater::LinearizableUpdater, hatP)
   #  - Mn(iterator) * K * Sn(iterator)'
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+Devuelve el número de dimensiones que puede soportar el `LinearizableUpdater`
+en el estado. 
+"""
 dimensions(updater::LinearizableUpdater) = size(Mn(updater))[1]
+
+"""
+$(TYPEDSIGNATURES)
+
+Devuelve una distribución normal multivariada ``\\mathcal{N}(0, Q)``, 
+donde ``Q`` es la matriz de covarianzas del `LinearizableUpdater`.
+"""
 noiser(updater::LinearizableUpdater) = MvNormal(zeros(dimensions(updater)), Qn(updater))
 
 
