@@ -54,8 +54,8 @@ Qn(updater::NLUpdater) = Qn(updater.linear)
 #end
 
 
-function (updater::NLUpdater)(x::AbstractArray, u::Real, error)
-  updater.integrity(updater.discretizer(x, u) + updater.F * error)
+function (updater::NLUpdater)(x::AbstractArray, u::Real, noise)
+  updater.integrity(updater.discretizer(x, u) + updater.F(x) * noise)
 end
 
 update_inner_system(updater::NLUpdater, x::AbstractArray, u::Real) = updater(x, u, rand(noiser(updater)))
