@@ -2,7 +2,7 @@
 Código que extiende a kalman.jl, para incorporar Updaters no lineales
 =#
 
-
+using Random
 #########################
 
 """
@@ -58,10 +58,8 @@ function (updater::NLUpdater)(x::AbstractArray, u::Real, error)
   updater.integrity(updater.discretizer(x, u) + updater.F * error)
 end
 
-update_inner_system(updater::NLUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
-update_aproximation(updater::NLUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
-
-
+update_inner_system(updater::NLUpdater, x::AbstractArray, u::Real) = updater(x, u, rand(noiser(updater)))
+update_aproximation(updater::NLUpdater, x::AbstractArray, u::Real) = updater(x, u, zeros(dimensions(updater)))
 
 #### podría hacer algo que retorne un linear updater...
 

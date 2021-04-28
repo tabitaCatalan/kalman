@@ -1,4 +1,5 @@
 # Updater
+using Distributions, Random
 
 ################################################################################
 
@@ -6,8 +7,8 @@
 abstract type KalmanUpdater end
 function update!(L::KalmanUpdater, hatx, hatP, control) error("Updating method not defined") end
 #function (updater::KalmanUpdater)(x::AbstractArray, u::Real, noise) error("Evaluation method not defined") end
-function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, noise) error("Implement update_inner_system") end
-function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, noise) error("Implement update_aproximation") end
+function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real) error("Implement update_inner_system") end
+function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real) error("Implement update_aproximation") end
 
 abstract type LinearizableUpdater <: KalmanUpdater end
 
@@ -31,7 +32,7 @@ De no ser así, será obligatorio definir
 
 function forecast(updater::LinearizableUpdater, hatx, hatP, control)
   hatPnp1 = forecast_hatP(updater, hatP)
-  hatxnp1 = update_aproximation(updater, hatx, control, 0.)
+  hatxnp1 = update_aproximation(updater, hatx, control)
   hatxnp1, hatPnp1
 end
 
@@ -76,13 +77,12 @@ struct SimpleLinearUpdater{T} <: LinearizableUpdater
   integrity
 end
 
-
-function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, error)
-  updater.integrity(updater.M * x + updater.B * u + updater.F * error)
+function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, noise)
+  updater.integrity(updater.M * x + updater.B * u + updater.F * noise)
 end
 
-update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
-update_aproximation(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, noise) = updater(x, u, noise)
+update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real) = updater(x, u, rand(noiser(updater)))
+update_aproximation(updater::SimpleLinearUpdater, x::AbstractArray, u::Real) = updater(x, u, zeros(dimensions(updater)))
 
 
 function update!(L::SimpleLinearUpdater, hatx, hatP, control) end # no necesita actualizarse

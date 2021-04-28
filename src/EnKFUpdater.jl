@@ -50,8 +50,7 @@ function EnKF(states, updater, observer::KalmanFilter.KalmanObserver, system::Ob
 end
 
 function update_inner_state!(enkf::EnKF, control)
-    noise = rand(enkf.noiser)
-    update_real_state!(enkf.system, enkf.updater, control, noise)
+    update_real_state!(enkf.system, enkf.updater, control)
     enkf.u = control
 end
 

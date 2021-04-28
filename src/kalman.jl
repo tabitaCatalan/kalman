@@ -85,8 +85,7 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
 end
 
 function update_inner_state!(iterator::LinearKalmanIterator, control)
-  noise = rand(iterator.noiser)
-  update_real_state!(iterator.system, iterator.updater, control, noise)
+  update_real_state!(iterator.system, iterator.updater, control)
   iterator.u = control
 end
 
