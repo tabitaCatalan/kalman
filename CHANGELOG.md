@@ -4,9 +4,15 @@ Los cambios notables al proyecto serán documentados aquí. Esta es la primera v
 El formato está basado en su mayor parte en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), y el proyecto intenta adherirse al [Semantic Versioning](https://semver.org/spec/v2.0.0.html), aunque aún tengo problemas para seguirlo.
 
 ## Trabajo futuro 
-- Agregar un `KalmanObserver` que permita incorporar datos externos.
-- Mejorar la forma de separar `ObservableSystem` en según si cuentan con un estado interno.
+
 ## Unreleased
+- ![Changed][badge-changed] Se cambia el modelo lineal básico; antes se tenía un vector ``F``, el cual era ponderado por un valor dado por una normal. Ahora se considera como una matriz, multiplicada por un vector aleatorio que distribuye normal multivariado (generalmente independientes).
+- ![Changed][badge-changed] Se cambia la interfaz a los updaters, ya no reciben el ruido de parte del `KalmanIterator`, si no que lo almacenan dentro.
+- ![Changed][badge-changed] `NLUpdater` ahora recibe una función `F(x)` que retorna una matriz.
+- ![Deprecated][badge-deprecated] `NLUnknowInput` se dejará de usar. Sus funcionalidades pueden obtenerse resolviendo un sistema ampliado. En un futuro se harán herramientas para hacer esto más fácil. 
+- ![Added][badge-added] Se crea el tipo abstracto `LinearizableUpdater`, que engloba a `SimpleLinearUpdater` y `NLUpdater`, pero no a `ODEUpdater`.
+- ![Fixed][badge-fixed] Se corrigen errores en `ODEForecaster`; no estaba resolviendo la ecuación de momentos de forma acoplada, entre otras cosas.
+
 
 ## Versión `v0.8.0` - 2021-04-23
 - ![Added][badge-added] Se agrega `ODEForecaster`, un nuevo `KalmanUpdater` que permite hacer una predicción del siguiente estado resolviendo las ecuaciones de momento del filtro de Kalman continuo-discreto.
