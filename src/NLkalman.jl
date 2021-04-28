@@ -30,8 +30,8 @@ mutable struct NLUpdater <: LinearizableUpdater
   - `integrity`: función que transforma un vector `x` para que cumple ciertas 
     restricciones de integridad (ser positivo, etc).
   """
-  function NLUpdater(discretizer::Discretizer, F, x0, α, integrity)
-    linear = linearize_x(discretizer, F, x0, α)
+  function NLUpdater(discretizer::Discretizer, F, Q, x0, α, integrity)
+    linear = linearize_x(discretizer, x0, α, F, Q, integrity)
     new(discretizer, F, linear, integrity)
   end
 end
@@ -45,6 +45,7 @@ end
 Mn(updater::NLUpdater) = Mn(updater.linear)
 Bn(updater::NLUpdater) = Bn(updater.linear)
 Fn(updater::NLUpdater) = Fn(updater.linear)
+Qn(updater::NLUpdater) = Qn(updater.linear)
 
 
 
@@ -66,11 +67,21 @@ update_aproximation(updater::NLUpdater, x::AbstractArray, u::Real, noise) = upda
 
 function linearize_x(NLup::NLUpdater, x, α)
   discretizer = NLup.discretizer
-  linearize_x(discretizer, NLup.F, x, α)
+  linearize_x(discretizer, x, α, NLup.F, Qn(NLup), NLup.integrity)
 end
 
-function linearize_x(discretizer::Discretizer, F, x, α)
+"""
+$(TYPEDEF)
+# Argumentos 
+- `discretizer::Discretizer`: el que discretiza la ecuación de actualización de estado.
+- `x`: Vector en torno al que se va a linealizar 
+- `α`: Valor del control en torno al que se va a linealizar 
+- `F`: función que recibe `x` y retorna una matriz de dispersión del ruido. 
+- `Q`: matriz de covarianza del ruido 
+- `integrity`: función de `x`, que conserva el valor dentro de un dominio.
+"""
+function linearize_x(discretizer::Discretizer, x, α, F, Q, integrity)
   M = jacobian_x(discretizer, x, α)
-  B = discretizer(x, α) - M * x
-  SimpleLinearUpdater(M, B, F)
+  B = discretizer(x, α) - M * x 
+  SimpleLinearUpdater(M, B, F(x), Q, integrity)
 end

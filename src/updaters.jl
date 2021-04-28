@@ -21,6 +21,13 @@ function Qn(::LinearizableUpdater) error("Por favor defina Qn para LinearizableU
 function (updater::KalmanUpdater)(state::StochasticState, error)
   updater(state.x, state.u, error)
 end
+#=================================================================
+Las funciones que siguen solo sirven para el caso en que updater 
+es linealizable, es decir, que tiene definidas las funciones 
+`Mn`, `Bn`, `Fn`, `Qn`.
+De no ser así, será obligatorio definir
+`forecast(updater::KalmanUpdater, hatx, hatP, control)` 
+=================================================================#
 
 function forecast(updater::LinearizableUpdater, hatx, hatP, control)
   hatPnp1 = forecast_hatP(updater, hatP)
@@ -29,7 +36,7 @@ function forecast(updater::LinearizableUpdater, hatx, hatP, control)
 end
 
 function forecast_hatP(updater::LinearizableUpdater, hatP)
-  Mn(updater) * hatP * Mn(updater)' + Qn(updater)
+  Mn(updater) * hatP * Mn(updater)' + Fn(updater) * Qn(updater) * Fn(updater)'
   #  - Sn(iterator) * inv(E) * Sn(iterator)'
   #  - Sn(iterator) * K' * Mn(iterator)'
   #  - Mn(iterator) * K * Sn(iterator)'
@@ -61,8 +68,10 @@ struct SimpleLinearUpdater{T} <: LinearizableUpdater
   M::AbstractMatrix{T}
   """Vector ``B``"""
   B::AbstractVector{T}
-  """Vector ``F``"""
-  F::AbstractVector{T}
+  """Matriz ``F``"""
+  F::AbstractMatrix{T}
+  """Matriz ``Q`` de covarianzas del error"""
+  Q::AbstractMatrix{T}
   """Función que corrige `x` para dejarlo dentro de un dominio."""
   integrity
 end
@@ -81,3 +90,4 @@ function update!(L::SimpleLinearUpdater, hatx, hatP, control) end # no necesita 
 Mn(updater::SimpleLinearUpdater) = updater.M
 Bn(updater::SimpleLinearUpdater) = updater.B
 Fn(updater::SimpleLinearUpdater) = updater.F
+Qn(updater::SimpleLinearUpdater) = updater.Q
