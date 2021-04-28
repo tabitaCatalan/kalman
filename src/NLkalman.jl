@@ -18,7 +18,7 @@ x_{n+1} = \\mathcal{M}(x_n, u_n) + F N_n
 donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
 ``\\mathcal{N}(0,1)``) y ``\\mathcal{M}`` está dada por un `Discretizer`.
 """
-mutable struct NLUpdater <: KalmanUpdater
+mutable struct NLUpdater <: LinearizableUpdater
   discretizer::Discretizer
   F
   linear::SimpleLinearUpdater

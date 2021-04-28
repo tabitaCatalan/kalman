@@ -9,29 +9,34 @@ function update!(L::KalmanUpdater, hatx, hatP, control) error("Updating method n
 function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, noise) error("Implement update_inner_system") end
 function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, noise) error("Implement update_aproximation") end
 
-function Mn(::KalmanUpdater) error("Mn no definida") end
-function Bn(::KalmanUpdater) error("Bn no definida") end
-function Fn(::KalmanUpdater) error("Fn no definida") end
+abstract type LinearizableUpdater <: KalmanUpdater end
 
-Qn(updater::KalmanUpdater) = Fn(updater) * Fn(updater)'
+function Mn(::LinearizableUpdater) error("Por favor defina Mn para LinearizableUpdater") end
+function Bn(::LinearizableUpdater) error("Por favor defina Bn para LinearizableUpdater") end
+function Fn(::LinearizableUpdater) error("Por favor defina Fn para LinearizableUpdater") end
+function Qn(::LinearizableUpdater) error("Por favor defina Qn para LinearizableUpdater") end
+
 ################################################################################
 
 function (updater::KalmanUpdater)(state::StochasticState, error)
   updater(state.x, state.u, error)
 end
 
-function forecast(updater::KalmanUpdater, hatx, hatP, control)
+function forecast(updater::LinearizableUpdater, hatx, hatP, control)
   hatPnp1 = forecast_hatP(updater, hatP)
   hatxnp1 = update_aproximation(updater, hatx, control, 0.)
   hatxnp1, hatPnp1
 end
 
-function forecast_hatP(updater::KalmanUpdater, hatP)
+function forecast_hatP(updater::LinearizableUpdater, hatP)
   Mn(updater) * hatP * Mn(updater)' + Qn(updater)
   #  - Sn(iterator) * inv(E) * Sn(iterator)'
   #  - Sn(iterator) * K' * Mn(iterator)'
   #  - Mn(iterator) * K * Sn(iterator)'
 end
+
+dimensions(updater::LinearizableUpdater) = size(Mn(updater))[1]
+noiser(updater::LinearizableUpdater) = MvNormal(zeros(dimensions(updater)), Qn(updater))
 
 
 
@@ -51,7 +56,7 @@ donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
 # Campos
 $(TYPEDFIELDS)
 """
-struct SimpleLinearUpdater{T} <: KalmanUpdater
+struct SimpleLinearUpdater{T} <: LinearizableUpdater
   """Matriz ``M``"""
   M::AbstractMatrix{T}
   """Vector ``B``"""

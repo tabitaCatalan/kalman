@@ -71,7 +71,7 @@ y un control ``u_n`` desconocido, que se intentará descubrir. ``N_n`` es un
 número aleatorio (dado por una variable aleatorio normal ``\\mathcal{N}(0,1)``)
 y ``\\mathcal{M}`` está dada por un `Discretizer`.
 """
-mutable struct NLUpdaterUnknowInput <: KalmanUpdater
+mutable struct NLUpdaterUnknowInput <: LinearizableUpdater
   state_updater::NLUpdater
   linear::SimpleLinearUpdater
   control
