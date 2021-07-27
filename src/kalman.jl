@@ -194,7 +194,9 @@ end
 
 function analyse_hatP(iterator)
   K = KalmanGain(iterator)
-  next_hatP(iterator) - K * En(iterator) * K'
+  (I - K * Hn(iterator)) * next_hatP(iterator) * (I - K * Hn(iterator))' + K * Rn(iterator) * K'
+  #next_hatP(iterator) - K * En(iterator) * K'
+
 end
 
 
