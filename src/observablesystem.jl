@@ -26,7 +26,7 @@ Measurements
 
 mutable struct Measurements <: ObservableSystem
     """Vector de mediciones de un sistema físico real"""
-    measurements::Vector{Float64}
+    measurements::Array{Float64,2}
     """Si es pedida una observación, se devolverá la `n`-ésima."""
     n::Int
     """Intervalo de *sampleo*."""
@@ -45,7 +45,7 @@ function update_real_state!(ms::Measurements, updater::KalmanUpdater, control)
 end 
   
 function observe_real_state(ms::Measurements, observer::KalmanObserver, control, error)
-    ms.measurements[ms.n:ms.n]
+    ms.measurements[ms.n, :]
 end
 
 #= 
