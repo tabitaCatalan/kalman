@@ -1,5 +1,5 @@
 # Ensemble Kalman Filter Updater
-using Statistics, Distributions, Random
+using Statistics, Distributions, Random, LinearAlgebra
 
 
 """
@@ -54,16 +54,23 @@ function update_inner_state!(enkf::EnKF, control)
     enkf.u = control
 end
 
-mean_cov_from_sample(sample) = mean(sample), cov(sample)
+# Debería haber una función inflated cov que use un parametro a (=10) 
+# en este caso, que sea guardado en enkf.
+mean_cov_from_sample(sample) = mean(sample), inflated_cov(sample)
+inflated_cov(sample, a::Number) = cov(sample) + a^2 * I # a = 1e4
+inflated_cov(sample, a) = cov(sample) + Diagonal(a)
+inflated_cov(sample) = inflated_cov(sample, [1e5, 1e2, 1e2, 1e2, 1e2, 1e2, 0.15])
 
+hatx(enkf::EnKF) = mean(enkf.states_hatx)
+hatP(enkf::EnKF) = inflated_cov(enkf.states_hatx)
 function forecast_hatX(enkf::EnKF, control)
-    hatx, hatP = mean_cov_from_sample(enkf.states_hatx)
+    hatP = inflated_cov(enkf.states_hatx)
     [forecast(enkf.updater, enkf.states_hatx[i], hatP, control)[1] for i in 1:enkf.N]
 end
 
 function forecast_observed_state!(enkf::EnKF, control)
     enkf.states_next_hatx .= forecast_hatX(enkf, control)
-    hatxₙ₊₁ₙ, hatPₙ₊₁ₙ = mean_cov_from_sample(enkf.states_next_hatx)
+    hatPₙ₊₁ₙ = inflated_cov(enkf.states_next_hatx)
     enkf.kalman_gain .= KalmanFilter.KalmanGain(enkf, hatPₙ₊₁ₙ)
 end
 
@@ -85,8 +92,7 @@ function update_updater!(enkf::EnKF)
     update!(enkf.updater, hatx(enkf), hatP(enkf), enkf.u)
 end
 
-hatx(enkf::EnKF) = mean(enkf.states_hatx)
-hatP(enkf::EnKF) = cov(enkf.states_hatx)
+
 
 forecast(enkf::EnKF, control) = mean_cov_from_sample(forecast_hatX(enkf, control))
 
