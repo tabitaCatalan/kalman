@@ -46,7 +46,7 @@ function EnKF(states, updater, observer::KalmanFilter.KalmanObserver, system::Ob
     N = length(states)
     kf, kc = KalmanFilter.kalman_size(observer)
     K_initialize = Array{Float64,2}(undef, kf, kc)
-    EnKF(0, N, 1., system, states, similar(states), K_initialize, updater, observer, Normal(0.,dt^2))
+    EnKF(0, N, 1., system, copy(states), similar(states), K_initialize, updater, observer, Normal(0.,sqrt(dt)))
 end
 
 function update_inner_state!(enkf::EnKF, control)
@@ -63,6 +63,7 @@ inflated_cov(sample) = inflated_cov(sample, [1e5, 1e2, 1e2, 1e2, 1e2, 1e2, 0.15]
 
 hatx(enkf::EnKF) = mean(enkf.states_hatx)
 hatP(enkf::EnKF) = inflated_cov(enkf.states_hatx)
+
 function forecast_hatX(enkf::EnKF, control)
     hatP = inflated_cov(enkf.states_hatx)
     [forecast(enkf.updater, enkf.states_hatx[i], hatP, control)[1] for i in 1:enkf.N]

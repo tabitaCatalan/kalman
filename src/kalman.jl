@@ -89,9 +89,9 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
     n = 0
     # verificar que α es escalar o que tiene el mismo tamaño que x0 
     #X = StochasticState(x0, 0.)
-    hatX = ObservedState(x0, P0)
-    next_hatX = ObservedState(x0, P0)
-    noiser = Normal(0.,dt^2)
+    hatX = ObservedState(copy(x0), copy(P0))
+    next_hatX = ObservedState(copy(x0), copy(P0))
+    noiser = Normal(0.,sqrt(dt))
     new{T}(n, 1., system, hatX, next_hatX, updater, observer, noiser, alpha)
   end
 end
