@@ -130,3 +130,48 @@ end
     #label --> "Análisis"
     #ts, r.analysis[:,index]
 end
+
+
+"""
+Aplica una función f a todos los elementos del ensamble a lo largo del tiempo.
+Devuelve una serie con el promedio de los resultados, y dos series con los límites 
+superior e inferior de los intervalos de confianza dados por `ci`.
+"""
+function apply_to_ensemble(f, ensemble, p)
+    N, m, T = size(ensemble.ensambles)
+    results = [f(ensemble.ensambles[n,:,t]) for t in 1:T, n in 1:N ] 
+    qtls_temp = [quantile(results[t,:], [p, 1-p]) for t in 1:T]
+    qtls = [qtls_temp[t][i] for t in 1:T, i = 1:2]
+    mean(results, dims = 2), (qtls[:,1], qtls[:,2])
+end
+
+
+@recipe function f(r::InnerStateSeries,en::EnsamblesStoring, ts, index, rango = 1:length(ts); error = true, p = 0.05)
+    i = index
+    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Recuperados", "Infectados acumulados", "Control"]
+    title --> titles[i]
+    xguide --> "Tiempos t (días)"
+    yguide --> "Personas"
+    hatx, qtls = apply_to_ensemble(x -> x[i], en, p)
+    @series begin
+        seriestype := :path
+        if error
+            ribbon --> qtls
+            label --> "Análisis, con error 1σ"
+        else 
+            label --> "Análisis"
+        end
+        ts[rango], r.analysis[rango,i]
+    end
+    
+    if i == 6
+        @series begin
+            seriestype := :path
+            label --> "Observaciones"
+            rango_ts = (rango[1]+1):rango[end]
+            rango_obs = rango[1]:(rango[end]-1)
+            ts[rango_ts], r.observations[rango_obs]
+        end
+    end
+end
+
