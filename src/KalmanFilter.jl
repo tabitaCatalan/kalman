@@ -13,6 +13,7 @@ include("kalman.jl")
 
 include("discretizers.jl")
 include("NLkalman.jl")
+include("NLObserver.jl")
 include("UnknownInput.jl")
 include("EnKFUpdater.jl")
 include("ODEUpdater.jl")
