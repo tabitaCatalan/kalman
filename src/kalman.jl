@@ -62,7 +62,12 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
   observer::LinearObserver
   """Una distribución que permite agregar ruido al sistema. Por defecto es una ``\\mathcal{N}(0,1)``."""
   noiser::UnivariateDistribution
-
+  """
+  Parámetro ``\\alpha \\in [0,1]`` de un filtro paso bajo que permite eliminar las
+  oscilaciones en el estado luego de hacer el análisis. Si ``\\alpha \\approx 1``, entonces 
+  no se hace correción, si ``\\alpha \\approx 0``, se suprimen casi todas las oscilaciones.
+  """
+  alpha 
   """
   $(TYPEDSIGNATURES)
   Crea un iterador que almacena un estado interno.
@@ -71,16 +76,23 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
   - `P0`: matriz de covarianza de la condición inicial.
   - `updater::KalmanUpdater`: actualizará tanto el sistema interno como el observado.
   - `observer::KalmanObserver`: permite observar el sistema interno.
+  - `dt`:
+  - `alpha:: parámetro (de la misma dimensión que el estado)con ``\\alpha_i \\in [0,1]``
+    de un filtro paso bajo, permite eliminar oscilaciones en el estado. Mientras más
+    cercano a ``1``, menor el efecto. //FIXME por ahora solo se aplica a la última
+    coordenada (el control). (O si es escalar igual sirve).
   """
   function LinearKalmanIterator(x0::AbstractVector{T}, P0::AbstractMatrix{T},
       updater::KalmanUpdater,
-      observer::KalmanObserver, system::ObservableSystem,dt = 1.) where T <: Real
+      observer::KalmanObserver, system::ObservableSystem,
+      dt, alpha = ones(size(x0))) where T <: Real
     n = 0
+    # verificar que α es escalar o que tiene el mismo tamaño que x0 
     #X = StochasticState(x0, 0.)
     hatX = ObservedState(x0, P0)
     next_hatX = ObservedState(x0, P0)
     noiser = Normal(0.,dt^2)
-    new{T}(n, 1., system, hatX, next_hatX, updater, observer, noiser)
+    new{T}(n, 1., system, hatX, next_hatX, updater, observer, noiser, alpha)
   end
 end
 
@@ -97,7 +109,15 @@ end
 function analyse!(iterator::LinearKalmanIterator, observation)
   hatPₙ₊₁ₙ₊₁ = analyse_hatP(iterator)
   hatxₙ₊₁ₙ₊₁ = analyse_hatx(iterator, observation)
-  iterator.hatX = ObservedState(hatxₙ₊₁ₙ₊₁, hatPₙ₊₁ₙ₊₁)
+  iterator.hatX = ObservedState(lowpass(iterator, hatxₙ₊₁ₙ₊₁), hatPₙ₊₁ₙ₊₁)
+end
+
+function lowpass(xₙ, yₙ₋₁, α) # si α ≈ 0, entonces se suaviza mucho 
+  α .* xₙ + (1 .- α) .* yₙ₋₁
+end
+
+function lowpass(iterator::LinearKalmanIterator, hatx_new)
+  lowpass(hatx_new, hatx(iterator), iterator.alpha)
 end
 
 function observe_forecasted_system(iterator::LinearKalmanIterator)
