@@ -59,7 +59,7 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
   """
   Un observador lineal que entrega observaciones ``y_n`` del estado real.
   """
-  observer::LinearObserver
+  observer::KalmanObserver
   """Una distribución que permite agregar ruido al sistema. Por defecto es una ``\\mathcal{N}(0,1)``."""
   noiser::UnivariateDistribution
   """

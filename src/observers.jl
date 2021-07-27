@@ -43,7 +43,7 @@ Hn(observer::LinearObserver) = observer.H
 Dn(observer::LinearObserver) = observer.D
 Gn(observer::LinearObserver) = observer.G
 
-function kalman_size(observer::LinearObserver)
+function kalman_size(observer::KalmanObserver)
   H = Hn(observer)
   size(H')
 end
