@@ -11,6 +11,25 @@ function Hn(::KalmanObserver) error("Hn no definida") end
 function Dn(::KalmanObserver) error("Dn no definida") end
 function Gn(::KalmanObserver) error("Gn no definida") end
 
+#=
+Forma interna de agregar el ruido a las observaciones 
+=#
+"""
+$(TYPEDSIGNATURES)
+
+Devuelve el número de dimensiones que puede soportar el `LinearizableUpdater`
+en el estado. 
+"""
+dimensions(observer::KalmanObserver) = size(Hn(observer))[1]
+
+#="""
+$(TYPEDSIGNATURES)
+
+Devuelve una distribución normal multivariada ``\\mathcal{N}(0, Q)``, 
+donde ``Q`` es la matriz de covarianzas del `LinearizableUpdater`.
+"""=#
+#noiser(observer::NLObserver) = MvNormal(zeros(dimensions(observer)), Rn(observer))
+
 #==================================================================
 Implementación sencilla de la interfaz: LinearObserver
 ===================================================================#
