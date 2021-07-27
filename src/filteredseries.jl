@@ -78,7 +78,7 @@ function add_error_forecast!(serie::InnerStateSeries, iteration, forecasted_stat
 end
 
 
-@recipe function f(r::KalmanFilter.InnerStateSeries, ts, index, rango = 1:length(ts))
+@recipe function f(r::InnerStateSeries, ts, index, rango = 1:length(ts); error = true)
     i = index
     titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Recuperados", "Infectados acumulados", "Control"]
     title --> titles[i]
@@ -103,8 +103,12 @@ end
     end =#
     @series begin
         seriestype := :path
-        label --> "Análisis, con error 1σ"
-        ribbon --> sqrt.(r.error_analysis[:,i])
+        if error
+            ribbon --> sqrt.(r.error_analysis[:,i])
+            label --> "Análisis, con error 1σ"
+        else 
+            label --> "Análisis"
+        end
         ts[rango], r.analysis[rango,i]
     end
     
