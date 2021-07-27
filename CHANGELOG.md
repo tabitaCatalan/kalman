@@ -4,15 +4,47 @@ Los cambios notables al proyecto serán documentados aquí. Esta es la primera v
 El formato está basado en su mayor parte en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), y el proyecto intenta adherirse al [Semantic Versioning](https://semver.org/spec/v2.0.0.html), aunque aún tengo problemas para seguirlo.
 
 ## Trabajo futuro 
+- Añadir *smoother* al paquete. 
+- Mejorar el diseño de `EnKF` para manejar mejor la inflación de varianza.
+- Eliminar `NLUnknowInput` y hacer una forma más fácil de trabajar con sistemas con inputs desconocidos.
+- Mejorar el diseño del código para graficar, para manejar distintos modelos.
+- Hacer notebooks de los archivos de ejemplo `SDE`.
 
 ## Unreleased
-- ![Changed][badge-changed] Se cambia el modelo lineal básico; antes se tenía un vector ``F``, el cual era ponderado por un valor dado por una normal. Ahora se considera como una matriz, multiplicada por un vector aleatorio que distribuye normal multivariado (generalmente independientes).
-- ![Changed][badge-changed] Se cambia la interfaz a los updaters, ya no reciben el ruido de parte del `KalmanIterator`, si no que lo almacenan dentro.
-- ![Changed][badge-changed] `NLUpdater` ahora recibe una función `F(x)` que retorna una matriz.
-- ![Deprecated][badge-deprecated] `NLUnknowInput` se dejará de usar. Sus funcionalidades pueden obtenerse resolviendo un sistema ampliado. En un futuro se harán herramientas para hacer esto más fácil. 
-- ![Added][badge-added] Se crea el tipo abstracto `LinearizableUpdater`, que engloba a `SimpleLinearUpdater` y `NLUpdater`, pero no a `ODEUpdater`.
-- ![Fixed][badge-fixed] Se corrigen errores en `ODEForecaster`; no estaba resolviendo la ecuación de momentos de forma acoplada, entre otras cosas.
 
+## Versión `v0.9.0` - 2021-07-27 
+Hice muchos cambios sin preocuparme del versionamiento, así que este incluye muchas cosas. La documentación no está al día con esta versión. 
+### Cambios de interfaces y constructores 
+- ![Changed][badge-changed] Se cambia el modelo lineal básico; antes se tenía un vector ``F``, el cual era ponderado por un valor dado por una normal. Ahora se considera como una matriz, multiplicada por un vector aleatorio que distribuye normal multivariado (generalmente independientes).
+- ![Changed][badge-changed] Se cambia la interfaz a los updaters, ya no reciben el ruido de parte del `KalmanIterator`, si no que lo almacenan dentro. Se modifica `EnKF` en consecuencia.
+- ![Changed][badge-changed] `NLUpdater` ahora recibe una función `F(x)` que retorna una matriz.
+- ![Added][badge-added] Se crea el tipo abstracto `LinearizableUpdater`, que engloba a `SimpleLinearUpdater` y `NLUpdater`, pero no a `ODEUpdater`.
+- ![Changed][badge-changed] Cambia el constructor de `ObservableSystem`, ahora recibe un Array 2d como observación. 
+- ![Changed][badge-changed] Cambia la interfaz de `Updater`, ahora `forecast` devuelve un `ComponentArray`.
+- ![Changed][badge-changed] Se agrega `forecast_with_error` a `Updater`, para ser usado por `EnKF`. 
+
+### Nuevas *Features*
+- ![Added][badge-added] `EnKF` trabaja ahora con varianza inflada, pero fue *hard-wired*. Debe ser corregido en futuras versiones.
+- ![Add][badge-added] ![Change][badge-changed] `KalmanIterator` ahora puede aplicar un filtro *low-pass* a los resultados del análisis. Esto cambia la interfaz de `KalmanIterator`.
+- ![Add][badge-added] Ahora Se chequea numéricamente la observabilidad local del sistema en cada paso al correr el filtro. Esto no funciona con `Updater`s que no sean de tipo `LinearizableUpdater`.
+- ![Added][badge-added] Observador no lineal `NLObserver`. 
+- ![Added][badge-added] Métodos para graficar `FilteredSeries` junto a `EnsambleStoring`. 
+- ![Added][badge-added] Se agrega `ContinuousDiscretMomentum` para facilitar el manejo de sistemas continuo discretos a `ODEUpdater`. Incluye `ExtendedMomentum` para trabajar con EKF y también `UnscentedMomentum`, que permite trabajar con UKF. 
+- ![Added][badge-added] Se agrega un código de ejemplo de *smoothing* para sistema continuo-discretos, pero aún no forma parte del paquete. 
+
+### Correción de errores 
+- ![Fixed][badge-fixed] Se corrigen errores en `ODEForecaster`; no estaba resolviendo la ecuación de momentos de forma acoplada, entre otras cosas.
+- ![Fixed][badge-fixed] `EnKF` y `KalmanIterator` estaban mutando los arrays de condiciones iniciales que se le daban. 
+- ![Fixed][badge-fixed] Había un error al generar ruido gaussiano (se usaba `dt^2` en lugar de `sqrt(dt)`).
+
+### Ejemplos 
+- ![Added][badge-added] Nuevos ejemplos con datos reales y sintéticos (códigos `SDE`). Solo archivos en bruto, mejorar a futuro como notebooks.
+- ![Changed][badge-changed] Se cambia la organización de los ejemplos, ahora las definiciones comunes están en un archivo `common_defs.jl`.
+
+### Otros 
+- ![Changed][badge-changed] El modelo principal de los ejemplos ahora considera Recuperados. Los plots que agregan label a los compartimientos ahora lo consideran. Esto debería corregirse a futuro con una forma mejor de manejar los gráficos de distintos modelos.
+- ![Changed][badge-changed] Se mejora la estabilidad del análisis, ahora los cálculos deberían asegurar simetría de la matriz de covarianza.
+- ![Deprecated][badge-deprecated] `NLUnknowInput` se dejará de usar. Sus funcionalidades pueden obtenerse resolviendo un sistema ampliado. En un futuro se harán herramientas para hacer esto más fácil. 
 
 ## Versión `v0.8.0` - 2021-04-23
 - ![Added][badge-added] Se agrega `ODEForecaster`, un nuevo `KalmanUpdater` que permite hacer una predicción del siguiente estado resolviendo las ecuaciones de momento del filtro de Kalman continuo-discreto.
