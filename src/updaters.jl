@@ -1,5 +1,5 @@
 # Updater
-using Distributions, Random
+using Distributions, Random, ComponentArrays
 
 ################################################################################
 
@@ -33,7 +33,7 @@ De no ser así, será obligatorio definir
 function forecast(updater::LinearizableUpdater, hatx, hatP, control)
   hatPnp1 = forecast_hatP(updater, hatP)
   hatxnp1 = update_aproximation(updater, hatx, control)
-  hatxnp1, hatPnp1
+  ComponentArray(x = hatxnp1, P = hatPnp1)
 end
 
 function forecast_hatP(updater::LinearizableUpdater, hatP)

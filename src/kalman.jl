@@ -181,8 +181,8 @@ end
 
 function forecast_observed_state!(iterator::LinearKalmanIterator, control)
   # forecast P para calcular K y E
-  hatxₙ₊₁ₙ, hatPₙ₊₁ₙ = forecast(iterator, control) # idem
-  iterator.next_hatX = ObservedState(hatxₙ₊₁ₙ, hatPₙ₊₁ₙ)
+  Xₙ₊₁ₙ = forecast(iterator, control) # idem
+  iterator.next_hatX = ObservedState(Xₙ₊₁ₙ.x, Xₙ₊₁ₙ.P)
 end
 
 
