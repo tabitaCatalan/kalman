@@ -130,7 +130,7 @@ end
 #Bn(iterator::KalmanIterator) = Bn(iterator.updater)
 #Fn(iterator::KalmanIterator) = Fn(iterator.updater)
 Hn(iterator::KalmanIterator) = Hn(iterator.observer)
-Dn(Iterator::KalmanIterator) = Dn(Iterator.observer)
+#Dn(Iterator::KalmanIterator) = Dn(Iterator.observer)
 Gn(Iterator::KalmanIterator) = Gn(Iterator.observer)
 
 #Sn(iterator::KalmanIterator) = Fn(iterator) * Gn(iterator)'
@@ -212,7 +212,7 @@ function full_iteration(iterator, dt, N, control_function, ensamble_size)
   ensamble = EnsamblesStoring(ensamble_size, dimensions, N)
 
   for i in 1:N
-    print(i)
+    #print(i)
     control = control_function(i * dt)
     #observation = KalmanFilter.observe_inner_system(iterator)
     add_ensamble!(ensamble, i, iterator)
