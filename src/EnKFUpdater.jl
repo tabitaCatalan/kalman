@@ -124,7 +124,7 @@ using RecipesBase
 
 @recipe function f(en::EnsamblesStoring, ts, index, rango = 1:length(ts))
     i = index
-    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Infectados acumulados", "Control"]
+    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Recuperados", "Infectados acumulados", "Control"]
     title --> titles[i]
     xguide --> "Tiempos t (días)"
     yguide --> "Personas"

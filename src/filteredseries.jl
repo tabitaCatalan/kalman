@@ -80,7 +80,7 @@ end
 
 @recipe function f(r::KalmanFilter.InnerStateSeries, ts, index, rango = 1:length(ts))
     i = index
-    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Infectados acumulados", "Control"]
+    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Recuperados", "Infectados acumulados", "Control"]
     title --> titles[i]
     xguide --> "Tiempos t (días)"
     yguide --> "Personas"
@@ -113,11 +113,13 @@ end
         label --> "Forecast"
         ts[rango], r.forecast[rango,i]
     end=#
-    if i == 5
+    if i == 6
         @series begin
             seriestype := :path
             label --> "Observaciones"
-            ts[rango], r.observations[rango]
+            rango_ts = (rango[1]+1):rango[end]
+            rango_obs = rango[1]:(rango[end]-1)
+            ts[rango_ts], r.observations[rango_obs]
         end
     end
 
