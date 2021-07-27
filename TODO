@@ -52,7 +52,7 @@ Versión 0.6.0:
     ✔ Documentar la estructura nueva y las nuevas interfaces para `KalmanObserver`, `KalmanIterator`, `ObservableSystem`. @done(21-04-19 09:21)
     
 Versión 0.8.0: 
-  ☐ Agregar un nuevo `Updater` que permita usar filtro de kalman continuo-discreto, actualizado `hatP` con una EDO. 
+  ✔ Agregar un nuevo `Updater` que permita usar filtro de kalman continuo-discreto, actualizado `hatP` con una EDO. @done(21-04-24 11:21)
     ✔ Leer paper del filtro de kalman continuo discreto @done(21-04-22 09:24)
     ✔ Ver qué necesito para implementarlo... creo que podría usar los discretizers que ya tenía. @done(21-04-22 09:24)
       ✔ Usar discretizer para hacer un solver de ODE @done(21-04-22 09:24)
@@ -63,23 +63,101 @@ Versión 0.8.0:
     ✔ Cambiar forecast desde iterator a updater @done(21-04-20 17:03)
     ✔ Debuggear el `ODEForecaster`, está dando cosas raras (susceptibles que suben....) @done(21-04-23 15:37)
     ✔ Tuve la idea de hacer el estado aumentado con el `ODEForecaster`, hay algo que no está funcionando (pero antes tampoco). Hice [x', u'] = [f(x,u), 0.] (la dinámica dice que u se mantiene constante). @done(21-04-23 15:37)
-    ☐ Usar un solver que mantenga la semipositividad de la la matrix hatP(t).
-  
+
+Versión 0.9.0:
+    ✔ Usar un solver que mantenga la semipositividad de la la matrix hatP(t). Está difícil, pensé que el paper serviría, pero incluso ellos dicen que ninguno de los métodos que usaron puede asegurarlo. @done(21-04-28 16:12)
+      El problema estaba en que no tenía ninguna semipositividad que conservar desde el principio xD.
+    ✔ Las ecuaciones están acopladas!!! Cómo no me dí cuenta, necesito rehacer el solver xD @today @done(21-04-26 09:32)
+
+    ☐ OJO, le quité el ruido al forecast_hatX del enkf
+    ✔ Hay que decidir bien la interfaz de updater... update aprox y update ... @done(21-06-24 12:24)
+
+
+
+    ✔ Una forma de aplicar funciones del estado `x` al ensamble, y obtener resultados con intervalos de confianza. @started(21-06-04 15:38) @done(21-06-04 17:56) @lasted(2h18m13s)
+    ☐ Corregir los resultados... a veces aparecen valores negativos en los valores `\alpha` del ensamble.
+
+Presentación investigadores: 
+  Qué cosas debería mostrar, por qué es interesante usar el filtro de Kalman para identificar parámetros? 
+  ✔ Caso simple con la EDO que usamos, usando una función de inputs rara que tengo que adivinar. @done(21-06-22 11:06)
+    ✔ Aprender a usar DiffEq para SDE @started(21-04-29 15:19) @done(21-05-01 14:10) @lasted(1d22h51m56s)
+    ✔  Tiene que ser un caso interesantse, usando un control que genere un rebrote. @critical @done(21-05-01 14:11)
+    ✔ Hacer esto suponiendo parámetros conocidos @done(21-06-22 11:05)
+    ✔ Y parámetros desconocidos. @done(21-06-22 11:05)
+    ☐ Tiene que calcular el Rt, con barrita de error. 
+  ☐ Misma ecuación pero ahora usando los datos de los recuperados que conocemos.
+  ☐ Caso de prueba con modelo multiclase 
+  ☐ Si alcanzara el tiempo (que lo veo muuuuuy difícil), tratar de meter datos de movilidad en algún lado, sería interesante.
+  ☐ Si lograra agregar la super ecuación multiclase sería bkn, pero volver a importar la matriz P va a ser un cacho. Sería bkn poder meter los datos de movilidad aquí.
+  Presentación: 
+    Filtro de Kalman: 
+      ☐ Variantes interesantes (que se usan en la literatura).
+    Revisión de literatura:
+      Cómo se ha usado el filtro en epidemiología. 
+    Caso sintético: @today 
+      ✔ Elegir un control que dé resultados bonitos. Y que dé valores razonables para el Rt. @done(21-06-30 16:15)
+        Esto está casi, necesito uno donde no bajen tanto los datos 
+      ☐ Mostrar resultados observando distintas combinaciones de variables 
+      ☐ Qué pasa al agregar el Rt a las observaciones. 
+      ☐ Esto es opcional, pero me interesa la sensibilidad de la cuestión. Qué tanto falla si uso parámetros incorrectos (que pasará de seguro). Creo que la condición inicial importa poco, el modelo la puede corregir bien. Pero los parámetros es un tema aparte. Aquí hay que pedir recomendaciones a los investigadores también. Podría ser para el sábado.
+      ☐ Creo que necesito controlar que el sistema se mantiene localmente observable. 
+      ☐ Tratar de eliminar una variable del sistema y ver qué pasa. 
+      ☐ Y si meto ruido variable en las observaciones? Como que el ruido en la observación dependa de `x`.
+    Justificación de las covarianzas: 
+      Esto para mañana `jueves`.
+      ☐ Rangos de valores para las variables
+      ☐ Expresar error como porcentaje de esos rangos 
+      ☐ Hay un par de artículos que dicen cómo elegir los parámetros del modelo. Me parece un buen lugar donde empezar. # No logré encontrar estos artículos. 
+    
+    Caso con datos reales:
+      Voy a revisar esto el `viernes`.
+    Pulir todo:
+      Esto para el `sábado`
+    Caso multiclase: 
+      Esto el `lunes` si hay tiempo 
+    
+
+
+Actualmente trabajando: 
+  Observar el Rt:
+    ✔ Crear código para `NLObserver`. @done(21-06-24 12:28)
+    ☐ Hacer función que observe el Rt.... aquí veo un problema, necesito el jacobiano c/r al estado. Si lo dejo como máximo valor propio de la matriz no voy a poder calcular ese jacobiano..... Necesito una expresión analítica. 
 
 Versiones futuras:  
-  ☐ `LinearizableUpdater` debe usarse... `ODEForecaster` no es de ese tipo. Tal vez separar updater de forecaster (algunos son ambos, ciertos métodos solo necesitan uno)
-  ☐ Hacer comparación usando la misma solución, (no una random, sino la real solución.).
+  ✘ REVISAR ODEForecaster al hacer enkf @critical @today @cancelled(21-06-24 12:24)
+  ✔ En enkf se están cambiando los originales...!!!! @critical @done(21-05-04 10:12)
+  ☐ Necesito 3 archivos bonitos y ordenados para mostrarle al profe 
+    ✔ Una EDO estocástica con parámetros tales que haya un rebrote, un control raro, etc @done(21-05-04 10:13)
+    ✔ Una con el filtro de Kalman para estimar los valores originales con datos obtenidos de esa EDO @done(21-06-24 12:24)
+    ✘ Una con ensamble! haciendo lo mismo @cancelled(21-06-24 12:24)
+      Ojo, necesito usar condiciones iniciales distintas y parámetros distintos (darlos con alguna distribución que tenga algún sentido, pero que se ajustará en el futuro con ayuda de los investigadores)
+    ✔ Otro usando datos reales. @done(21-06-24 12:24)
+  
+
+  ✔ Hacer un archivo con las definiciones comunes, para no tener que copiar y pegar tanto código. @started(21-05-01 14:14) @done(21-05-01 14:38) @lasted(24m4s)
+  ✔ Comenzar a usar una matriz en lugar de un vector de ruido @today @started(21-04-27 14:56) @done(21-04-28 10:36) @lasted(19h40m3s)
+  
+  ✔ Documentar la nueva clase `LinearizableUpdater`. @done(21-04-28 16:11)
+  
+  ✔ Tendré que manejar el ruido desde el interior de `Updater`, era raro tenerlo en iterator de todas formas. @done(21-05-01 14:38)
+  ✘ Usar la interfaz tipo x, P más seguido, sobretodo en ODEUpdater @cancelled(21-06-24 12:25)
+  ✔ `LinearizableUpdater` debe usarse... `ODEForecaster` no es de ese tipo. Tal vez separar updater de forecaster (algunos son ambos, ciertos métodos solo necesitan uno) @done(21-04-28 16:11)
+  ✔ Hacer comparación usando la misma solución, (no una random, sino la real solución.). @done(21-06-24 12:09)
   ✔ Sospecho fuertemente de mi cálculo de covarianza. Hay que revisar, debería hacer un test para eso. @critical @done(21-04-15 10:28)
     Hice el test y la covarianza está bien
-  ☐ Hay que hacer una versión de `NLUpdater` que no linearice en cada paso, que sea más liviana para `EnKF`.
+  ✘ Hay que hacer una versión de `NLUpdater` que no linearice en cada paso, que sea más liviana para `EnKF`. @cancelled(21-06-24 12:10)
   
   
-  ☐ Hacer un refactoring del código, incluyendo _holy traits_ para diferenciar ciertas carácteristicas como la existencia de un estado interno para observer, o si el `KalmanUpdater` es linealizables o no.
+  
   ☐ OJO CON LOS ERRORES..... GQ*G'
   ✔ Necesito un patch también del error incremental en el solver de la EDO estocástica. CREO QUE ESTÁ CORREGIDO @done(21-04-13 14:22)
   ✔ Hacer una estructura para mostrar los resultados. Quizá eso resuelva el error de que la EDO funciona y a veces no. @done(21-04-15 11:52)
-  ☐ Más generalidad a las restricciones de integridad.
+  ✔ Más generalidad a las restricciones de integridad. @done(21-06-24 12:25)
   ✔ Restricciones de integridad al updater @done(21-04-15 11:52)
+
+
+En algún momento: 
+  ☐ Hay que hacer que se use una única función no lineal que reciba los tres parámetros, onda `x' = f(x, u, w)` y `y = h(x, u, v)`. Hasta ahora el ruido se está tratando de manera diferenciada. Peeeeero, estoy segura de que por ahora no se necesitaaaaa.
 
 Lectura: 
   ✔ Leer de Ensemble Kalman @critical @done(21-04-09 15:55)
@@ -88,4 +166,15 @@ Documentación:
   ✔ Aprender a usar Documenter.jl @done(21-03-26 15:03)
   ✔ Hacer documentación local @done(21-04-08 11:48)
   ✔ Hacer ejemplos con Literate.jl @done(21-04-08 11:48)
-  ☐ Hostear la documentación en GitHub pages 
+  ✔ Hostear la documentación en GitHub pages @done(21-06-22 11:08)
+  Específicos: 
+    ☐ Agregar una descripción de la función de integridad y añadir link en las partes donde se mencione.
+
+
+Orden y organización del código:
+  Organización de los archivos:
+    ☐ Hacer carpetas para separar el código en updaters, observer, etc.
+    ☐ Renombrar adecuadamente los archivos 
+
+  Refactoring: 
+    ☐ Hacer un refactoring del código, incluyendo _holy traits_ para diferenciar ciertas carácteristicas como la existencia de un estado interno para observer, o si el `KalmanUpdater` es linealizables o no.
