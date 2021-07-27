@@ -136,6 +136,6 @@ using RecipesBase
         linewidth --> 0.1
         seriescolor := :gray
         seriesalpha := 0.8
-        ts[rango], en.ensambles[:,i,:]'
+        ts[rango], en.ensambles[:,i,rango]'
     end
 end
