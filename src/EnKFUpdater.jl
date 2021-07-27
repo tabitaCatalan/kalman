@@ -66,7 +66,7 @@ hatP(enkf::EnKF) = inflated_cov(enkf.states_hatx)
 
 function forecast_hatX(enkf::EnKF, control)
     hatP = inflated_cov(enkf.states_hatx)
-    [forecast(enkf.updater, enkf.states_hatx[i], hatP, control)[1] for i in 1:enkf.N]
+    [forecast_with_error(enkf.updater, enkf.states_hatx[i], hatP, control).x for i in 1:enkf.N]
 end
 
 function forecast_observed_state!(enkf::EnKF, control)

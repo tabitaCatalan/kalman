@@ -35,6 +35,13 @@ function forecast(updater::LinearizableUpdater, hatx, hatP, control)
   hatxnp1 = update_aproximation(updater, hatx, control)
   ComponentArray(x = hatxnp1, P = hatPnp1)
 end
+# esta funcion es para EnKF, que necesita agregarle ruido a las aproximaciones
+# a diferencia de los demas metodos
+function forecast_with_error(updater::LinearizableUpdater, hatx, hatP, control)
+  hatPnp1 = forecast_hatP(updater, hatP)
+  hatxnp1 = update_inner_system(updater, hatx, control)
+  ComponentArray(x = hatxnp1, P = hatPnp1)
+end
 
 function forecast_hatP(updater::LinearizableUpdater, hatP)
   Mn(updater) * hatP * Mn(updater)' + Fn(updater) * Qn(updater) * Fn(updater)'
