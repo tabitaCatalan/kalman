@@ -224,7 +224,19 @@ function full_iteration(iterator, dt, N, control_function, ensamble_size)
     #add_error_forecast!(results, i, [forecastP[j,j] for j in 1:dimensions])
 
     add_observation!(results, i, next_iteration!(iterator, control)[1])
+    print(Int(check_observability(iterator)))
 
   end
   results, ensamble
+end
+
+function check_observability(iterator::LinearKalmanIterator)
+  H = KalmanFilter.Hn(iterator.observer)
+  M = KalmanFilter.Mn(iterator.updater)
+  n = size(M)[1]
+  obs_matrix = copy(H)
+  for i = 1:(n-1)
+          obs_matrix = [obs_matrix; M^i]
+  end 
+  rank(obs_matrix) == n
 end
