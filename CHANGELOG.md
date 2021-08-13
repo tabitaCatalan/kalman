@@ -12,6 +12,11 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 
 ## Unreleased
 
+## Versión `v0.10.0` - 2021-08-13 
+Correcciones para poder trabajar en CovidMTK. Ahora se puede trabajar con dinámicas no autónomas (#2, #3).
+- ![Changed][badge-changed] Cambian las interfaces de `Discretizer` y `KalmanUpdater`. Se actualizan `SimpleLinearUpdater` y `NLUpdater`. 
+- ![Broken][badge-broken] `ODEForecaster` no funciona y requiere algunos cambios para poder usar la nueva interfaz de `Discretizer`.
+
 ## Versión `v0.9.0` - 2021-07-27 
 Hice muchos cambios sin preocuparme del versionamiento, así que este incluye muchas cosas. La documentación no está al día con esta versión. 
 ### Cambios de interfaces y constructores 
