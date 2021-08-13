@@ -22,6 +22,8 @@ function next_iteration!(iterator::KalmanIterator, control)
   # prepare structures for next iteration 
   update_updater!(iterator)
 
+  advance_counter!(iterator)
+
   yₙ₊₁
 end
 
@@ -95,6 +97,8 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
     new{T}(n, 1., system, hatX, next_hatX, updater, observer, noiser, alpha)
   end
 end
+
+tn(iterator) = iterator.n * dt(iterator.updater)
 
 function update_inner_state!(iterator::LinearKalmanIterator, control)
   update_real_state!(iterator.system, iterator.updater, control)
@@ -172,11 +176,11 @@ function observe_observed_system(iterator::LinearKalmanIterator)
 end
 
 function update_updater!(iterator::LinearKalmanIterator)
-  update!(iterator.updater, hatx(iterator), hatP(iterator), un(iterator))
+  update!(iterator.updater, hatx(iterator), hatP(iterator), un(iterator), tn(iterator))
 end
 
 function forecast(iterator::LinearKalmanIterator, control)
-  forecast(iterator.updater, hatx(iterator), hatP(iterator), control)
+  forecast(iterator.updater, hatx(iterator), hatP(iterator), control, tn(iterator))
 end
 
 function forecast_observed_state!(iterator::LinearKalmanIterator, control)
