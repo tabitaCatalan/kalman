@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Filtro de Kalman Extendido · KalmanFilter.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">KalmanFilter.jl</span></div><form class="docs-search" action="../search.html"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../index.html">KalmanFilter.jl</a></li><li><a class="tocitem" href="../iterators.html">Iterators</a></li><li><a class="tocitem" href="../updaters.html">Updaters</a></li><li><a class="tocitem" href="../observers.html">Observers</a></li><li><a class="tocitem" href="../systems.html">Systems</a></li><li><a class="tocitem" href="../discretizers.html">Discretizers</a></li><li><span class="tocitem">Ejemplos</span><ul><li><a class="tocitem" href="NLFilterUnknownInput.html">Filtro de Kalman Extendido con input desconocido</a></li><li class="is-active"><a class="tocitem" href="NLFilter.html">Filtro de Kalman Extendido</a><ul class="internal"><li><a class="tocitem" href="#Modelo-epidemiológico-SEII"><span>Modelo epidemiológico SEII</span></a></li><li><a class="tocitem" href="#Resultados"><span>Resultados</span></a></li></ul></li><li><a class="tocitem" href="NLFilterENKF.html">Filtro de Kalman por ensambles</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Ejemplos</a></li><li class="is-active"><a href="NLFilter.html">Filtro de Kalman Extendido</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href="NLFilter.html">Filtro de Kalman Extendido</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Filtro-de-Kalman-Extendido"><a class="docs-heading-anchor" href="#Filtro-de-Kalman-Extendido">Filtro de Kalman Extendido</a><a id="Filtro-de-Kalman-Extendido-1"></a><a class="docs-heading-anchor-permalink" href="#Filtro-de-Kalman-Extendido" title="Permalink"></a></h1><pre><code class="language-">using KalmanFilter
+using Plots</code></pre><h2 id="Modelo-epidemiológico-SEII"><a class="docs-heading-anchor" href="#Modelo-epidemiológico-SEII">Modelo epidemiológico SEII</a><a id="Modelo-epidemiológico-SEII-1"></a><a class="docs-heading-anchor-permalink" href="#Modelo-epidemiológico-SEII" title="Permalink"></a></h2><p>El modelo permite modelar el desarrollo de una enfermedad regida por la siguiente dinámica:</p><p class="math-container">\[\begin{aligned}
+S&#39; &amp;= - \alpha(t) S (E + I^m) \\
+E&#39; &amp;= \alpha(t) S (E + I^m) - \gamma_E E \\
+(I^m)&#39; &amp;= (1-\varphi) \gamma_E E - \gamma_I I^m \\
+I&#39; &amp;= \varphi \gamma_E E - \gamma_I I\\
+(cI)&#39; &amp;= \varphi \gamma_E E
+\end{aligned}\]</p><p>donde</p><ul><li><span>$S$</span> representa a los <strong>susceptibles</strong>, las personas que podrían contagiarse.</li><li><span>$E$</span> corresponde a los que han sido <strong>expuestos</strong> al virus y lo están incubando.</li><li><span>$I^m$</span> denota a los infectados <em>mild</em>, que tienen síntomas leves o ninguno.</li><li><span>$I$</span> denota a los infectados sintomáticos.</li><li><span>$cI$</span> es el total de infectados sintomáticos acumulados (agregamos este valor porque es un dato con el que se cuenta del sistema real).</li></ul><p>Además la dinámica tiene los siguientes parámetros:</p><ul><li><span>$\alpha(t)$</span> es la Tasa de contagio en tiempo <span>$t$</span>.</li><li><span>$\gamma_E$</span> es Tasa de infección (paso de expuesto a infectado).</li><li><span>$\gamma_I$</span> es la Tasa de remoción (dejar de estar infectado, ya sea por recuperación o muerte).</li><li><span>$\varphi$</span> es Proporción de personas sintomáticas.</li></ul><p>Denotando <span>$\mathbf{x}(t) = (S(t), E, I^m, I, cI)$</span>, el sistema es de la forma</p><p class="math-container">\[\mathbf{x}(t)&#39; = f(\mathbf{x}(t), \alpha(t), p)\]</p><p>donde <span>$\alpha(t)$</span> será un control y <span>$p$</span> representa a los otros parámetros. Guardamos la información de la dinámica en la función <code>episystem_full(x, α, p)</code>.</p><pre><code class="language-julia">function episystem_full(x, α, p)
+  γᵢ = p.gammai; γₑ = p.gammae; φ = p.phi;
+  β = 1e-7
+  [-α * β * x[1] * (x[2] + x[3]),
+  α * β * x[1] * (x[2] + x[3]) - γₑ * x[2],
+  (1 - φ) * γₑ * x[2] - γᵢ * x[3],
+  φ * γₑ * x[2] - γᵢ * x[4],
+  φ * γₑ * x[2]]
+end</code></pre><pre class="documenter-example-output">episystem_full (generic function with 1 method)</pre><p>Vemos que este sistema es no lineal, por lo que para poder trabajarlo con el filtro de Kalman necesitaremos linearizarlo. Para eso será necesaria la información</p><p class="math-container">\[D_x f(\mathbf{x}, \alpha(t), p) =\]</p><pre><code class="language-julia">function epijacobian_full_x(x, α, p)
+  γᵢ = p.gammai; γₑ = p.gammae; φ = p.phi;
+  β = 1e-7
+  [-α*β*(x[2] + x[3])  -α*β*x[1]     -α*β*x[1]  0.  0.;
+  α*β*(x[2] + x[3])  (α*β*x[1]-γₑ)  α*β*x[1]  0.  0.;
+  0.                 (1-φ)*γₑ       -γᵢ       0.  0.;
+  0.                 φ*γₑ           0.        -γᵢ 0.;
+  0.                 φ*γₑ           0.        0.  0.]
+end</code></pre><pre class="documenter-example-output">epijacobian_full_x (generic function with 1 method)</pre><p>Puesto que consideraremos el input como desconocido, y la dinámica <span>$f$</span> es no lineal en ese input, también necesitaremos <span>$D_u f$</span>.</p><pre><code class="language-julia">function epijacobian_full_u(x, α, p)
+  γᵢ = p.gammai; γₑ = p.gammae; φ = p.phi;
+  β = 1e-7
+  [-β*x[1]*(x[2] + x[3]),
+  β*x[1]*(x[2] + x[3]),
+  0.,
+  0.,
+  0.]
+end</code></pre><pre class="documenter-example-output">epijacobian_full_u (generic function with 1 method)</pre><p>Definimos un vector de condiciones iniciales <span>$x_0$</span>.</p><pre><code class="language-julia">x0 = [7.112808e6, 1046.8508799517147, 0.0, 521.963080420307, 0.0]
+F = 50000. * ones(5)</code></pre><pre class="documenter-example-output">5-element Array{Float64,1}:
+ 50000.0
+ 50000.0
+ 50000.0
+ 50000.0
+ 50000.0</pre><p>Solo consideraremos conocida la cantidad total de infectados <span>$\mathbf{x}_5 = cI$</span>.</p><pre><code class="language-julia">H = [0. 0. 0. 0. 1.]</code></pre><pre class="documenter-example-output">1×5 Array{Float64,2}:
+ 0.0  0.0  0.0  0.0  1.0</pre><p>Usaremos un error de unas 50.000 personas en las mediciones.</p><pre><code class="language-julia">G = [5e6]
+dimensions = 5</code></pre><pre class="documenter-example-output">5</pre><p>Definimos las matrices <span>$\tilde{H}$</span> para nuestro sistema auxiliar, que incluirá al input.</p><pre><code class="language-julia">tildeH = [H 0.]
+
+tildeP = [F * F&#39; zeros(5); zeros(5)&#39; 1.]</code></pre><pre class="documenter-example-output">6×6 Array{Float64,2}:
+ 2.5e9  2.5e9  2.5e9  2.5e9  2.5e9  0.0
+ 2.5e9  2.5e9  2.5e9  2.5e9  2.5e9  0.0
+ 2.5e9  2.5e9  2.5e9  2.5e9  2.5e9  0.0
+ 2.5e9  2.5e9  2.5e9  2.5e9  2.5e9  0.0
+ 2.5e9  2.5e9  2.5e9  2.5e9  2.5e9  0.0
+ 0.0    0.0    0.0    0.0    0.0    1.0</pre><p>EL nuevo vector de estados será <span>$\tilde{\mathbf{x}} = \begin{pmatrix} \mathbf{x}_0 \\ 1. \end{pmatrix}$</span>, donde estamos considerando una suposición inicial para el estado <span>$\alpha = 1$</span>.</p><pre><code class="language-julia">tildex0 = [x0; 0.4]
+
+dt = 0.05
+T = 50.
+N = Int(T/dt)</code></pre><pre class="documenter-example-output">1000</pre><p>Definimos los parámetros</p><pre><code class="language-julia">γₑ = 0.14
+γᵢ = 1/14
+φ = 0.3</code></pre><pre class="documenter-example-output">0.3</pre><p>Que agrupamos en una tupla <code>p</code>.</p><pre><code class="language-julia">p = (gammae = γₑ, gammai = γᵢ, phi = φ)</code></pre><pre class="documenter-example-output">(gammae = 0.14, gammai = 0.07142857142857142, phi = 0.3)</pre><p>Usaremos un <code>Discretizer</code> RungeKutta de orden 4, diferenciable tanto en el estado <span>$x$</span> como en el control <span>$u$</span>. Lo construimos a partir de un discretizador solo diferenciable en <span>$x$</span> por comodidad.</p><pre><code class="language-julia">rkx = KalmanFilter.RK4Dx(episystem_full, epijacobian_full_x, p, dt)
+rk = KalmanFilter.RK4Du(rkx, epijacobian_full_u)</code></pre><pre class="documenter-example-output">KalmanFilter.RK4Du(Main.ex-NLFilter.episystem_full, Main.ex-NLFilter.epijacobian_full_x, Main.ex-NLFilter.epijacobian_full_u, (gammae = 0.14, gammai = 0.07142857142857142, phi = 0.3), 0.05)</pre><p>El control para el sistema interno (que supondremos desconocido y es el que intentaremos averiguar) será la función constante por pedazos <code>control_pieces</code>.</p><pre><code class="language-julia">function control_pieces(t)
+    if t &lt; 5.
+        1.
+    elseif t &gt;= 5. &amp;&amp; t &lt; 12.
+        0.8
+    elseif t &gt;= 12. &amp;&amp; t &lt; 25.
+        0.5
+    elseif t &gt;= 25. &amp;&amp; t &lt; 40.
+        1.5
+    elseif t &gt;= 40.
+        1.
+    end
+end</code></pre><pre class="documenter-example-output">control_pieces (generic function with 1 method)</pre><p>Veamos un gráfico del control usado, para lo que definimos un vector con los tiempos <code>ts</code>.</p><pre><code class="language-">ts = 0.0:dt:(T-dt)
+plot(ts, control_pieces.(ts), label = &quot;Control real&quot;)</code></pre><p>Definimos las estructuras necesarias para crear un <code>LinearKalmanIterator</code>.</p><pre><code class="language-">nlupdater = NLUpdater(rk,F,x0,0.4)
+#nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces, 1.)
+#observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
+observer = KalmanFilter.LinearObserver(H, zeros(1), G)
+system = KalmanFilter.InnerState(x0)
+iterator = KalmanFilter.LinearKalmanIterator(x0, F * F&#39;, nlupdater, observer, system, dt)</code></pre><p>Y realizamos un total de <code>N</code> iteraciones, guardando los estamos intermedios en las variables que aparecen abajo.</p><pre><code class="language-">results, ensamble = KalmanFilter.full_iteration(iterator, dt, N, control_pieces, 1)</code></pre><h2 id="Resultados"><a class="docs-heading-anchor" href="#Resultados">Resultados</a><a id="Resultados-1"></a><a class="docs-heading-anchor-permalink" href="#Resultados" title="Permalink"></a></h2><p>Graficaremos los estados internos considerados, y los resultados obtenidos.</p><p>Ahora podemos graficar los diferentes estados de nuestro sistema, así como las aproximaciones obtenidas con filtro de Kalman.</p><p>Susceptibles <span>$S$</span></p><pre><code class="language-">plot(results, ts, 1, ylims = (0, 7.5e6))</code></pre><p>Expuestos <span>$E$</span></p><pre><code class="language-">plot(results, ts, 2, ylims = (0, 2.8e6))</code></pre><p>Infectados asintomáticos <em>mild</em> <span>$I^m$</span></p><pre><code class="language-">plot(results, ts, 3)</code></pre><p>Infectados <span>$I$</span></p><pre><code class="language-">plot(results, ts, 4)</code></pre><p>Infectados acumulados <span>$cI$</span>, y las observaciones que hicimos de él.</p><pre><code class="language-">plot(results, ts, 5)</code></pre><p>Notamos que tras una cierta cantidad de tiempo es posible averiguar el control Aunque hay bastante incerteza de los resultados.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="NLFilterUnknownInput.html">« Filtro de Kalman Extendido con input desconocido</a><a class="docs-footer-nextpage" href="NLFilterENKF.html">Filtro de Kalman por ensambles »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 13 August 2021 22:10">Friday 13 August 2021</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
