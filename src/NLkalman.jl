@@ -57,7 +57,7 @@ Bn(updater::NLUpdater) = Bn(updater.linear)
 Fn(updater::NLUpdater) = Fn(updater.linear)
 Qn(updater::NLUpdater) = Qn(updater.linear)
 
-
+dt(updater::NLUpdater) = dt(updater.discretizer)
 
 #function (updater::NLUpdater)(state, control, error)
 #  updater.discretizer(state.x, control) + updater.F * error

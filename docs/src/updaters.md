@@ -8,7 +8,7 @@ Métodos a implementar | Breve descripción
 --- | ---
 `update!(L::KalmanUpdater, hatx, hatP, control, t)` | un método que permita actualizar al iterador y dejarlo listo para la siguiente iteración. Cuando se usan matrices ``M_n := M, B_n := B, F_n:= F`` contantes se puede dejar en blanco, pero debería usarse, por ejemplo, para linearlizar en torno a ``\hat{x}_n`` cuando se usa un `KalmanUpdater` no lineal.
 `forecast(updater::KalmanUpdater, hatx, hatP, control, t)` | Devuelve una tupla que contiene a ``\hat{x}_{n+1, n}, \hat{P}_{n+1, n}`` a partir de ``\hat{x}_{n,n}``(`hatx`), ``\hat{P}_{n,n}``(`hatP`) y un control.
-
+`dt(updater::KalmanUpdater)` | ``\Delta t``
 
 ## `LinearizableUpdater`
 Un grupo importante de `KalmanUpdater`s serán los que, o bien son lineales de la forma

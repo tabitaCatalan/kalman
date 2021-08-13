@@ -93,9 +93,13 @@ struct SimpleLinearUpdater{T} <: LinearizableUpdater
   F::AbstractMatrix{T}
   """Matriz ``Q`` de covarianzas del error"""
   Q::AbstractMatrix{T}
+  """``\Delta t``"""
+  dt
   """Función que corrige `x` para dejarlo dentro de un dominio."""
   integrity
 end
+
+dt(updater::SimpleLinearUpdater) = updater.dt 
 
 function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, t, noise)
   updater.integrity(updater.M * x + updater.B * u + updater.F * noise)
