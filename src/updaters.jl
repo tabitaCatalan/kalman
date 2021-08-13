@@ -5,10 +5,10 @@ using Distributions, Random, ComponentArrays
 
 # Interfaz que debe ser definida por las estructuras tipo `KalmanUpdater`.
 abstract type KalmanUpdater end
-function update!(L::KalmanUpdater, hatx, hatP, control) error("Updating method not defined") end
+function update!(L::KalmanUpdater, hatx, hatP, control, t) error("Updating method not defined") end
 #function (updater::KalmanUpdater)(x::AbstractArray, u::Real, noise) error("Evaluation method not defined") end
-function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real) error("Implement update_inner_system") end
-function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real) error("Implement update_aproximation") end
+function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_inner_system") end
+function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_aproximation") end
 
 abstract type LinearizableUpdater <: KalmanUpdater end
 
@@ -19,8 +19,8 @@ function Qn(::LinearizableUpdater) error("Por favor defina Qn para LinearizableU
 
 ################################################################################
 
-function (updater::KalmanUpdater)(state::StochasticState, error)
-  updater(state.x, state.u, error)
+function (updater::KalmanUpdater)(state::StochasticState, t, error)
+  updater(state.x, state.u, t, error)
 end
 #=================================================================
 Las funciones que siguen solo sirven para el caso en que updater 
