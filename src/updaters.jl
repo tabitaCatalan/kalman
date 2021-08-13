@@ -97,15 +97,15 @@ struct SimpleLinearUpdater{T} <: LinearizableUpdater
   integrity
 end
 
-function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, noise)
+function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, t, noise)
   updater.integrity(updater.M * x + updater.B * u + updater.F * noise)
 end
 
-update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real) = updater(x, u, rand(noiser(updater)))
-update_aproximation(updater::SimpleLinearUpdater, x::AbstractArray, u::Real) = updater(x, u, zeros(dimensions(updater)))
+update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, t) = updater(x, u, t, rand(noiser(updater)))
+update_aproximation(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, t) = updater(x, u, t, zeros(dimensions(updater)))
 
 
-function update!(L::SimpleLinearUpdater, hatx, hatP, control) end # no necesita actualizarse
+function update!(L::SimpleLinearUpdater, hatx, hatP, control, t) end # no necesita actualizarse
 
 Mn(updater::SimpleLinearUpdater) = updater.M
 Bn(updater::SimpleLinearUpdater) = updater.B
