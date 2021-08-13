@@ -1,4 +1,4 @@
-# Discretizadores: `Discretizer `
+# Discretizadores: `Discretizer`
 
 El tipo abstracto `Discretizer` está pensado como una interfaz a las estructuras
 que permitan trabajar con una Ecuación Diferencial Ordinaria autónoma (un sistema continuo)

@@ -91,5 +91,5 @@ $(TYPEDEF)
 function linearize_x(discretizer::Discretizer, x, α, t, F, Q, integrity)
   M = jacobian_x(discretizer, x, α, t)
   B = discretizer(x, α, t) - M * x 
-  SimpleLinearUpdater(M, B, F(x), Q, integrity)
+  SimpleLinearUpdater(M, B, F(x), Q, dt(discretizer), integrity)
 end
