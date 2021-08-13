@@ -93,7 +93,7 @@ struct SimpleLinearUpdater{T} <: LinearizableUpdater
   F::AbstractMatrix{T}
   """Matriz ``Q`` de covarianzas del error"""
   Q::AbstractMatrix{T}
-  """``\Delta t``"""
+  """``\\Delta t``"""
   dt
   """Función que corrige `x` para dejarlo dentro de un dominio."""
   integrity
