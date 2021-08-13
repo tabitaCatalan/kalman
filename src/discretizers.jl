@@ -5,6 +5,7 @@ abstract type Discretizer end
 
 function (::Discretizer)(x,α,t) error("No se ha definido un método para este discretizador.") end
 function jacobian_x(ds::Discretizer, x, α, t) error("No se ha definido un método para este discretizador.")  end
+dt(ds::Discretizer) = ds.dt
 
 """
 $(TYPEDEF)
