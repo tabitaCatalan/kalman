@@ -16,7 +16,10 @@ estado ``x_{n+1}`` a partir del estado ``x_{n}`` y el control ``u_n`` según
 x_{n+1} = \\mathcal{M}(x_n, u_n) + F N_n
 ```
 donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
-``\\mathcal{N}(0,1)``) y ``\\mathcal{M}`` está dada por un `Discretizer`.
+``\\mathcal{N}(0,Q)``) y ``\\mathcal{M}`` está dada por un `Discretizer`.
+
+En todo tiempo guarda una versión linealizada del sistema, en torno a un punto 
+``x_n, u_n, t_n`` (al construirlo se le deben dar esos valores también.)
 """
 mutable struct NLUpdater <: LinearizableUpdater
   discretizer::Discretizer
@@ -27,18 +30,25 @@ mutable struct NLUpdater <: LinearizableUpdater
   $(TYPEDSIGNATURES)
   Constructor de un actualizador no lineal `NLUpdater`.
   # Argumentos
+  - `discretizer::Discretizer`: incorpora la información de la función no lineal 
+  a usar, así como del método de discretización. Debe tener definido `jacobian_x`.
+  - `F::Function`: función de la forma `F(x)` que devuelva una matriz cuadrada de 
+  las dimensiones de `x0`, correspondiente a la matriz de dispersión de ruido.
+  - `Q`: matriz de covarianzas del ruido (se supone Gaussiano). Debe tener las 
+  dimensiones de `x0` y ser semidefinida positiva.
+  - `x0`, `α0`, `t0`: condiciones iniciales en torno a las que se va a linealizar.
   - `integrity`: función que transforma un vector `x` para que cumple ciertas 
     restricciones de integridad (ser positivo, etc).
   """
-  function NLUpdater(discretizer::Discretizer, F, Q, x0, α, integrity)
-    linear = linearize_x(discretizer, x0, α, F, Q, integrity)
+  function NLUpdater(discretizer::Discretizer, F, Q, x0, α0, t0, integrity)
+    linear = linearize_x(discretizer, x0, α0, t0, F, Q, integrity)
     new(discretizer, F, linear, integrity)
   end
 end
 
 
-function update!(updater::NLUpdater, x, P, α) #NLupdater = NonLinearUpdater(fancyM, jacobian_x)
-  linear = linearize_x(updater, x, α)
+function update!(updater::NLUpdater, x, P, α, t) #NLupdater = NonLinearUpdater(fancyM, jacobian_x)
+  linear = linearize_x(updater, x, α, t)
   updater.linear = linear
 end
 
@@ -47,25 +57,25 @@ Bn(updater::NLUpdater) = Bn(updater.linear)
 Fn(updater::NLUpdater) = Fn(updater.linear)
 Qn(updater::NLUpdater) = Qn(updater.linear)
 
-
+dt(updater::NLUpdater) = dt(updater.discretizer)
 
 #function (updater::NLUpdater)(state, control, error)
 #  updater.discretizer(state.x, control) + updater.F * error
 #end
 
 
-function (updater::NLUpdater)(x::AbstractArray, u::Real, noise)
-  updater.integrity(updater.discretizer(x, u) + updater.F(x) * noise)
+function (updater::NLUpdater)(x::AbstractArray, u::Real, t, noise)
+  updater.integrity(updater.discretizer(x, u, t) + updater.F(x) * noise)
 end
 
-update_inner_system(updater::NLUpdater, x::AbstractArray, u::Real) = updater(x, u, rand(noiser(updater)))
-update_aproximation(updater::NLUpdater, x::AbstractArray, u::Real) = updater(x, u, zeros(dimensions(updater)))
+update_inner_system(updater::NLUpdater, x::AbstractArray, u::Real, t) = updater(x, u, t, rand(noiser(updater)))
+update_aproximation(updater::NLUpdater, x::AbstractArray, u::Real, t) = updater(x, u, t, zeros(dimensions(updater)))
 
 #### podría hacer algo que retorne un linear updater...
 
-function linearize_x(NLup::NLUpdater, x, α)
+function linearize_x(NLup::NLUpdater, x, α, t)
   discretizer = NLup.discretizer
-  linearize_x(discretizer, x, α, NLup.F, Qn(NLup), NLup.integrity)
+  linearize_x(discretizer, x, α, t, NLup.F, Qn(NLup), NLup.integrity)
 end
 
 """
@@ -78,8 +88,8 @@ $(TYPEDEF)
 - `Q`: matriz de covarianza del ruido 
 - `integrity`: función de `x`, que conserva el valor dentro de un dominio.
 """
-function linearize_x(discretizer::Discretizer, x, α, F, Q, integrity)
-  M = jacobian_x(discretizer, x, α)
-  B = discretizer(x, α) - M * x 
-  SimpleLinearUpdater(M, B, F(x), Q, integrity)
+function linearize_x(discretizer::Discretizer, x, α, t, F, Q, integrity)
+  M = jacobian_x(discretizer, x, α, t)
+  B = discretizer(x, α, t) - M * x 
+  SimpleLinearUpdater(M, B, F(x), Q, dt(discretizer), integrity)
 end

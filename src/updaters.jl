@@ -5,10 +5,10 @@ using Distributions, Random, ComponentArrays
 
 # Interfaz que debe ser definida por las estructuras tipo `KalmanUpdater`.
 abstract type KalmanUpdater end
-function update!(L::KalmanUpdater, hatx, hatP, control) error("Updating method not defined") end
+function update!(L::KalmanUpdater, hatx, hatP, control, t) error("Updating method not defined") end
 #function (updater::KalmanUpdater)(x::AbstractArray, u::Real, noise) error("Evaluation method not defined") end
-function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real) error("Implement update_inner_system") end
-function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real) error("Implement update_aproximation") end
+function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_inner_system") end
+function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_aproximation") end
 
 abstract type LinearizableUpdater <: KalmanUpdater end
 
@@ -19,8 +19,8 @@ function Qn(::LinearizableUpdater) error("Por favor defina Qn para LinearizableU
 
 ################################################################################
 
-function (updater::KalmanUpdater)(state::StochasticState, error)
-  updater(state.x, state.u, error)
+function (updater::KalmanUpdater)(state::StochasticState, t, error)
+  updater(state.x, state.u, t, error)
 end
 #=================================================================
 Las funciones que siguen solo sirven para el caso en que updater 
@@ -30,16 +30,16 @@ De no ser así, será obligatorio definir
 `forecast(updater::KalmanUpdater, hatx, hatP, control)` 
 =================================================================#
 
-function forecast(updater::LinearizableUpdater, hatx, hatP, control)
+function forecast(updater::LinearizableUpdater, hatx, hatP, control, t)
   hatPnp1 = forecast_hatP(updater, hatP)
-  hatxnp1 = update_aproximation(updater, hatx, control)
+  hatxnp1 = update_aproximation(updater, hatx, control, t)
   ComponentArray(x = hatxnp1, P = hatPnp1)
 end
 # esta funcion es para EnKF, que necesita agregarle ruido a las aproximaciones
 # a diferencia de los demas metodos
-function forecast_with_error(updater::LinearizableUpdater, hatx, hatP, control)
+function forecast_with_error(updater::LinearizableUpdater, hatx, hatP, control, t)
   hatPnp1 = forecast_hatP(updater, hatP)
-  hatxnp1 = update_inner_system(updater, hatx, control)
+  hatxnp1 = update_inner_system(updater, hatx, control, t)
   ComponentArray(x = hatxnp1, P = hatPnp1)
 end
 
@@ -93,19 +93,23 @@ struct SimpleLinearUpdater{T} <: LinearizableUpdater
   F::AbstractMatrix{T}
   """Matriz ``Q`` de covarianzas del error"""
   Q::AbstractMatrix{T}
+  """``\\Delta t``"""
+  dt
   """Función que corrige `x` para dejarlo dentro de un dominio."""
   integrity
 end
 
-function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, noise)
+dt(updater::SimpleLinearUpdater) = updater.dt 
+
+function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, t, noise)
   updater.integrity(updater.M * x + updater.B * u + updater.F * noise)
 end
 
-update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real) = updater(x, u, rand(noiser(updater)))
-update_aproximation(updater::SimpleLinearUpdater, x::AbstractArray, u::Real) = updater(x, u, zeros(dimensions(updater)))
+update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, t) = updater(x, u, t, rand(noiser(updater)))
+update_aproximation(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, t) = updater(x, u, t, zeros(dimensions(updater)))
 
 
-function update!(L::SimpleLinearUpdater, hatx, hatP, control) end # no necesita actualizarse
+function update!(L::SimpleLinearUpdater, hatx, hatP, control, t) end # no necesita actualizarse
 
 Mn(updater::SimpleLinearUpdater) = updater.M
 Bn(updater::SimpleLinearUpdater) = updater.B

@@ -1,4 +1,4 @@
-# Discretizadores: `Discretizer `
+# Discretizadores: `Discretizer`
 
 El tipo abstracto `Discretizer` está pensado como una interfaz a las estructuras
 que permitan trabajar con una Ecuación Diferencial Ordinaria autónoma (un sistema continuo)
@@ -19,7 +19,7 @@ Métodos a implementar | Breve descripción
 --- | ---
 `(::Discretizer)(x::AbstractArray, α::Real, t) ` | El método debe poder ser evaluado en un estado ``x``, un control ``\alpha`` y en tiempo ``t``.
 `jacobian_x(ds::Discretizer, x, α, t)` | Debe contarse con la derivada con respecto al estado.
-
+`dt(ds::Discretizer)` | ``\Delta t`` para la discretización temporal.
 Usaremos Euler progresivo como un ejemplo de cómo implementar la interfaz. 
 
 
