@@ -79,10 +79,9 @@ mutable struct LinearKalmanIterator{T} <: KalmanIterator
   - `updater::KalmanUpdater`: actualizará tanto el sistema interno como el observado.
   - `observer::KalmanObserver`: permite observar el sistema interno.
   - `dt`:
-  - `alpha:: parámetro (de la misma dimensión que el estado)con ``\\alpha_i \\in [0,1]``
+  - `alpha`: vector de parámetros (de la misma dimensión que el estado)con ``\\alpha_i \\in [0,1]``
     de un filtro paso bajo, permite eliminar oscilaciones en el estado. Mientras más
-    cercano a ``1``, menor el efecto. //FIXME por ahora solo se aplica a la última
-    coordenada (el control). (O si es escalar igual sirve).
+    cercano a ``1``, menor el efecto. Opcional, por defecto es un vector de 1s.
   """
   function LinearKalmanIterator(x0::AbstractVector{T}, P0::AbstractMatrix{T},
       updater::KalmanUpdater,
