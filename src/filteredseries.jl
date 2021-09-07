@@ -80,8 +80,8 @@ end
 
 @recipe function f(r::InnerStateSeries, ts, index, rango = 1:length(ts); error = true)
     i = index
-    titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Recuperados", "Infectados acumulados", "Control"]
-    title --> titles[i]
+    #titles = ["Susceptibles", "Expuestos", "Infectados mild", "Infectados", "Recuperados", "Infectados acumulados", "Control"]
+    #title --> titles[i]
     xguide --> "Tiempos t (días)"
     yguide --> "Personas"
     #=
@@ -117,6 +117,7 @@ end
         label --> "Forecast"
         ts[rango], r.forecast[rango,i]
     end=#
+    #=
     if i == 6
         @series begin
             seriestype := :path
@@ -126,7 +127,7 @@ end
             ts[rango_ts], r.observations[rango_obs]
         end
     end
-
+    =#
     #label --> "Análisis"
     #ts, r.analysis[:,index]
 end
