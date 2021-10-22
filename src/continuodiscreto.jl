@@ -19,7 +19,7 @@ donde ``w_t`` es un browniano (``w_t - w_s \\sim \\mathcal{N}(0, t-s)``, etc).
 
 Deben estar definido un método de la forma 
 ```julia 
-function (CD::ContinuousDiscretMomentum)(X::ComponentArray, u, p) 
+function (CD::ContinuousDiscretMomentum)(X::ComponentArray, u, p, t) 
     ...
 end 
 ```
@@ -45,17 +45,17 @@ function UMomentum(f, Q, g = I, alpha = 1., beta = 0., lambda = 2.)
     UnscentedMomentum(f, Q, g, alpha, beta, lambda)
 end
 
-function (UM::UnscentedMomentum)(X::ComponentArray, u, p)
+function (UM::UnscentedMomentum)(X::ComponentArray, u, p, t) 
     points, w_μ, w_Σ, sqrt_P = unscented_transform_sqrtP(UM, X)
     N = length(w_μ) # 2n+1
-    dmdt = sum([w_μ[i] * UM.f(points[:,i], u, p) for i in 1:N])
-    dPdt = sum([covariance_approx(sqrt_P, points[:,i], w_Σ[i], UM.f, u, p, (x) -> UM.g(x) * UM.Q * UM.g(x)') for i in 1:N])
+    dmdt = sum([w_μ[i] * UM.f(points[:,i], u, p, t) for i in 1:N])
+    dPdt = sum([covariance_approx(sqrt_P, points[:,i], w_Σ[i], UM.f, u, p, t, (x) -> UM.g(x) * UM.Q * UM.g(x)') for i in 1:N])
     ComponentArray(x = dmdt, P = dPdt)
 end
 
-function covariance_approx(sqrt_P, point, w_Σ_i, f, u, p, noise)
+function covariance_approx(sqrt_P, point, w_Σ_i, f, u, p, t, noise)
     aux = sqrt_P * point 
-    fx =  f(point, u, p)
+    fx =  f(point, u, p, t)
     w_Σ_i * (aux * fx' + fx * aux' + noise(point))
 end
 
@@ -100,18 +100,18 @@ end
 Para trabajar con un sistema continuo discreto, usando filtro extendido 
 """
 struct ExtendedMomentum <: ContinuousDiscretMomentum
-    """Función ``f(x, u, p)``"""
+    """Función ``f(x, u, p, t)``"""
     f 
-    """Función ``D_xf(x,u,p)``"""
+    """Función ``D_xf(x, u, p, t)``"""
     Dxf 
     g
     """Función que puede ser evaluada en `x`""" 
     Q
 end
 
-function (EM::ExtendedMomentum)(X::ComponentArray, u, p)
-    dx = EM.f(X.x, u, p)
-    dxFP = EM.Dxf(X.x, u, p) * X.P
+function (EM::ExtendedMomentum)(X::ComponentArray, u, p, t)
+    dx = EM.f(X.x, u, p, t)
+    dxFP = EM.Dxf(X.x, u, p, t) * X.P
     gx = EM.g(X.x)
     ComponentArray(x = dx, P = dxFP + dxFP' + gx * EM.Q * gx', Ck = X.Ck * inv(X.P) * dxFP')
 end
