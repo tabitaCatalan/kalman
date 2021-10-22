@@ -13,7 +13,17 @@ Para trabajar con un sistema de la forma
 dx = f(x,u,p)dt + g(x)dw
 ```
 
-donde ``w_t`` es un browniano (``w_t - w_s \\sim \\mathcal{N}(0, t-s)``, etc).
+donde ``w_t`` es un browniano (``w_t - w_s \\sim \\mathcal{N}(0, t-s)``, etc). 
+
+# Interfaz 
+
+Deben estar definido un método de la forma 
+```julia 
+function (CD::ContinuousDiscretMomentum)(X::ComponentArray, u, p) 
+    ...
+end 
+```
+donde `X` tiene los campos `x`, `P`. Debería retornar un `ComponentArray` de la misma forma.
 """
 abstract type ContinuousDiscretMomentum end 
 
