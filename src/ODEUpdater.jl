@@ -19,17 +19,19 @@ function ODEForecaster(dt, n_steps, x0, P0, p, integrity, momentum::ContinuousDi
     small_dt = dt/n_steps
     #discret_system = KalmanFilter.RK4Dx(f, Dxf, p, small_dt)
     #Q = Diagonal(sqrt(small_dt) * ones(length(x0)))
-    #X0 = ComponentArray(x=x0, P= P0)
+    #X0 = ComponentArray(x=x0, P= P0)  (x,\\alpha, p, t)
     discret_momentum = KalmanFilter.SimpleRK4(momentum, p, small_dt)
     ODEForecaster(dt, n_steps, discret_momentum, integrity)
 end 
+
+dt(updater::ODEForecaster) = updater.dt 
 
 # tengo que asegurar que el discretizer usa un dt más chico... 
 
 #small_dt(odefor::ODEForecaster) = odefor.dt / odefor.n_steps 
 
-function next_Xn(Xn, odefor::ODEForecaster, control)
-    odefor.discret_momentum(Xn, control)
+function next_Xn(Xn, odefor::ODEForecaster, control, t)
+    odefor.discret_momentum(Xn, control, t)
 end 
 #=
 function set_Xn!(odefor::ODEForecaster, Xn)
@@ -46,16 +48,16 @@ end
 function update!(odefor::ODEForecaster, hatx, hatP, control) 
     set_Xn!(odefor, ComponentArray(x = hatx, P = hatP))
 end =#
-function update!(odefor::ODEForecaster, hatx, hatP, control) end
+function update!(odefor::ODEForecaster, hatx, hatP, control, t) end
 
 function apply_integrity!(X, odefor)
     X.x .= odefor.integrity(X.x)
 end
 
-function forecast(odefor::ODEForecaster, hatx, hatP, control)
+function forecast(odefor::ODEForecaster, hatx, hatP, control, t)
     X_actual = ComponentArray(x = hatx, P = hatP, Ck = hatP)
     for n in 1:odefor.n_steps
-        X_actual = next_Xn(X_actual, odefor, control)
+        X_actual = next_Xn(X_actual, odefor, control, t) 
     end 
     apply_integrity!(X_actual, odefor)
     X_actual
