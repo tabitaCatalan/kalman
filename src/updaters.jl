@@ -27,7 +27,7 @@ Las funciones que siguen solo sirven para el caso en que updater
 es linealizable, es decir, que tiene definidas las funciones 
 `Mn`, `Bn`, `Fn`, `Qn`.
 De no ser así, será obligatorio definir
-`forecast(updater::KalmanUpdater, hatx, hatP, control)` 
+`forecast(updater::KalmanUpdater, hatx, hatP, control, t)` 
 =================================================================#
 
 function forecast(updater::LinearizableUpdater, hatx, hatP, control, t)
