@@ -10,6 +10,8 @@ function update!(L::KalmanUpdater, hatx, hatP, control, t) error("Updating metho
 function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_inner_system") end
 function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_aproximation") end
 
+function dt(updater::KalmanUpdater) error("dt method not defined for updater") end
+
 abstract type LinearizableUpdater <: KalmanUpdater end
 
 function Mn(::LinearizableUpdater) error("Por favor defina Mn para LinearizableUpdater") end
@@ -17,8 +19,6 @@ function Bn(::LinearizableUpdater) error("Por favor defina Bn para LinearizableU
 function Fn(::LinearizableUpdater) error("Por favor defina Fn para LinearizableUpdater") end
 function Qn(::LinearizableUpdater) error("Por favor defina Qn para LinearizableUpdater") end
 
-# Creo que también necesito que esté definida 
-function dt(updater::KalmanUpdater) error("dt method not defined for updater") end
 ################################################################################
 
 function (updater::KalmanUpdater)(state::StochasticState, t, error)
