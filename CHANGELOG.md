@@ -99,7 +99,7 @@ Hice muchos cambios sin preocuparme del versionamiento, así que este incluye mu
 [badge-deprecated]: https://img.shields.io/static/v1?label=&message=Deprecated&color=orange&style=flat-square
 [badge-changed]: https://img.shields.io/static/v1?label=&message=Changed&color=blue&style=flat-square 
 [badge-fixed]: https://img.shields.io/static/v1?label=&message=Fixed&color=blueviolet&style=flat-square 
-[badge-experimental]: https://img.shields.io/static/v1?label=&message=Experimental&color=lightgrey&style=flat-square
+[badge-experimental]: https://img.shields.io/static/v1?label=&message=Experimental&color=ff69b4&style=flat-square
 [badge-broken]: https://img.shields.io/static/v1?label=&message=Broken&color=lightgrey&style=flat-square
 
 <!-- Ideas de badges 
