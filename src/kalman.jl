@@ -207,7 +207,7 @@ end
 # Argumentos
 - `control_function`: control en función del tiempo
 """
-function full_iteration(iterator, dt, N, control_function, ensamble_size)
+function full_iteration(iterator, dt, N, control_function, ensamble_size; obscheck = true)
 
   dimensions = kalman_size(iterator.observer)[1]
 
@@ -229,7 +229,9 @@ function full_iteration(iterator, dt, N, control_function, ensamble_size)
     #add_error_forecast!(results, i, [forecastP[j,j] for j in 1:dimensions])
 
     add_observation!(results, i, next_iteration!(iterator, control)[1])
-    print(Int(check_observability(iterator)))
+    if obscheck
+      print(Int(check_observability(iterator)))
+    end 
 
   end
   results, ensamble
