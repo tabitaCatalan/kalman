@@ -10,6 +10,8 @@ function update!(L::KalmanUpdater, hatx, hatP, control, t) error("Updating metho
 function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_inner_system") end
 function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_aproximation") end
 
+function dt(updater::KalmanUpdater) error("dt method not defined for updater") end
+
 abstract type LinearizableUpdater <: KalmanUpdater end
 
 function Mn(::LinearizableUpdater) error("Por favor defina Mn para LinearizableUpdater") end
@@ -27,7 +29,7 @@ Las funciones que siguen solo sirven para el caso en que updater
 es linealizable, es decir, que tiene definidas las funciones 
 `Mn`, `Bn`, `Fn`, `Qn`.
 De no ser así, será obligatorio definir
-`forecast(updater::KalmanUpdater, hatx, hatP, control)` 
+`forecast(updater::KalmanUpdater, hatx, hatP, control, t)` 
 =================================================================#
 
 function forecast(updater::LinearizableUpdater, hatx, hatP, control, t)
