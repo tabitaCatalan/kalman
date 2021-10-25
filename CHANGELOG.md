@@ -12,6 +12,10 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 
 ## Unreleased
 
+## Versión `v0.10.1` - 2021-10-25 
+- ![Fixed][badge-fixed] `ODEForecaster` ya puede usar la nueva interfaz de `Discretizer`.
+- ![Added][badge-added] Se agrega el *keyword argument* `obscheck` (`true` por defecto) a la función `full_iteration`. Permite suprimir el checkeo de observabilidad local. Útil cuando se usan `KalmanUpdater`s que no son del tipo `LinearizableUpdater`, como `ODEForecaster`.
+
 ## Versión `v0.10.0` - 2021-08-13 
 Correcciones para poder trabajar en CovidMTK. Ahora se puede trabajar con dinámicas no autónomas (#2, #3).
 - ![Changed][badge-changed] Cambian las interfaces de `Discretizer` y `KalmanUpdater`. Se actualizan `SimpleLinearUpdater` y `NLUpdater`. 
