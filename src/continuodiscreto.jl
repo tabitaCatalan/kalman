@@ -66,10 +66,17 @@ end
 function (UM::UnscentedMomentum)(X::ComponentArray, u, p, t) 
     points, w_μ, w_Σ, sqrt_P = unscented_transform_sqrtP(UM, X)
     N = length(w_μ) # 2n+1
-    dmdt = sum([w_μ[i] * UM.f(points[:,i], u, p, t) for i in 1:N])
-    dPdt = sum([covariance_approx(sqrt_P, points[:,i], w_Σ[i], UM.f, u, p, t, (x) -> UM.g(x) * UM.Q * UM.g(x)') for i in 1:N])
-    ComponentArray(x = dmdt, P = dPdt)
+    dmdt = sum(w_μ[i] * UM.f(points[:,i], u, p, t) for i in 1:N)
+    dPdt = sum(covariance_approx(sqrt_P, points[:,i], w_Σ[i], UM.f, u, p, t, (x) -> UM.g(x) * UM.Q * UM.g(x)') for i in 1:N)
+    Ef = sum(Efx_mt(sqrt_P, points[:,i], w_Σ[i], UM.f, u, p, t) for i in 1:N)
+    ComponentArray(x = dmdt, P = dPdt, Ck = X.Ck * inv(X.P) * Ef)
 end
+
+function Efx_mt(sqrt_P, point, w_Σ_i, f, u, p, t)
+    aux = sqrt_P * point 
+    fx =  f(point, u, p, t)
+    w_Σ_i * fx * aux'
+end 
 
 function covariance_approx(sqrt_P, point, w_Σ_i, f, u, p, t, noise)
     aux = sqrt_P * point 
