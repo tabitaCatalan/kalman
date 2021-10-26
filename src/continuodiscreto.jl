@@ -28,6 +28,7 @@ donde `X` tiene los campos `x`, `P`. Debería retornar un `ComponentArray` de la
 abstract type ContinuousDiscretMomentum end 
 
 """
+The `UnscentedMomentum` approximates the momentum equation by using the Unscented Transform.
 Los parámetros 
 `alpha`, `beta`, `lambda`: corresponden a parámetros ``\\alpha, \\beta, \\gamma``
     de la transformación *unscented*. 
@@ -71,6 +72,24 @@ end
 https://github.com/sisl/GaussianFilters.jl/blob/master/src/ukf.jl
 con algunas modificaciones
 =# 
+"""
+    unscented_transform_sqrtP(μ, Σ, λ, α, β)
+The unscented transform is an approximation of the result of applying a given
+nonlinear transformation to a probability distribution that is characterized
+only in terms of its mean `μ` and covariance matrix `Σ`.
+# Arguments 
+- `μ`: mean 
+- `Σ`: covariance matrix, must be semidefinite positive.
+- `λ`, `α`: related with the spread of the `σ`-points
+- `β`: encodes prior info of the distribution 
+Falta agregar algo que diga qué es cada parámetro 
+# Returns 
+A 4-Tuple with the following components 
+- `points`: `σ`-points 
+- `w_μ`: weights 
+- `w_Σ`: weights 
+- `s`: 
+"""
 function unscented_transform_sqrtP(μ, Σ, λ, α, β)
     n = length(μ)
 
