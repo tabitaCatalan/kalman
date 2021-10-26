@@ -24,6 +24,23 @@ function (CD::ContinuousDiscretMomentum)(X::ComponentArray, u, p, t)
 end 
 ```
 donde `X` tiene los campos `x`, `P`. Debería retornar un `ComponentArray` de la misma forma.
+
+Este método debe retornar la aproximación de dinámica de las ecuaciones de momentum
+evaluadas en `X`, `p`, `t`.
+    (CD::ContinuousDiscretMomentum)(X::ComponentArray, u, p, t) 
+Las ecuaciones de momentum son 
+
+```math 
+\\begin{aligned}
+\frac{dm}{dt} &= \\mathbb{E}\\big[ f(x,t) \\big] \\
+\frac{dP}{dt} &= \\mathbb{E}\\big[ (x-m)f^{\\top}(x,t) \\big] + \\mathbb{E}\\big[f(x,t)(x-m)^{\\top} \\big] + \\mathbb{E}\\big[ g(x) Q g(x)^\\top \\big] 
+\\end{aligned}
+```
+
+Adicionalemente, la ecuación 
+```math 
+\frac{dC_k}{dt} &= C_k P^{-1}\\mathbb{E}\\big[f(x,t)(x-m)^{\\top} \\big] 
+```
 """
 abstract type ContinuousDiscretMomentum end 
 
