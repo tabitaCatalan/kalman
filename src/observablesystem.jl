@@ -24,18 +24,16 @@ function set_inner_state(::IsMeasurements, x) error("A system of this type has n
 Measurements 
 =#
 
-mutable struct Measurements <: ObservableSystem
+struct Measurements <: ObservableSystem
     """Array de mediciones de un sistema físico real.
     Supone que la primera medición es tomada en tiempo ``t = 0``.
     Las columnas corresponden a distintos estados/cantidades
     y las filas a distintos instantes de tiempo."""
     measurements::Array{Float64,2}
-    """Si es pedida una observación, se devolverá la `n`-ésima."""
-    n::Int
     """Intervalo de *sampleo*."""
     dt
     function Measurements(measurements, dt)
-      new(measurements, 1, dt)
+      new(measurements, dt)
     end
 end
 
@@ -49,16 +47,10 @@ Determine measurement index to read from time `t`.
 """
 get_index(ms::Measurements, t) = min(approxfloor(t / ms.dt) + 1, number_of_measurements(ms))
 
-function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, t)
-    if 1 <= ms.n && ms.n <= number_of_measurements(ms)
-        ms.n += 1
-    else
-        println("No hay más mediciones disponibles")
-    end
-end 
+function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, t) end 
   
 function observe_real_state(ms::Measurements, observer::KalmanObserver, control, t, error)
-    ms.measurements[ms.n, :]
+    ms.measurements[get_index(ms, t), :]
 end
 
 #= 
