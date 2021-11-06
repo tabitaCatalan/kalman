@@ -91,19 +91,23 @@ donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
 # Campos
 $(TYPEDFIELDS)
 """
-struct SimpleLinearUpdater{T} <: LinearizableUpdater
+struct SimpleLinearUpdater{T, 
+                          A <:AbstractArray{T,2},
+                          V <: AbstractVector{T},
+                          I <: Integrity
+                          } <: LinearizableUpdater
   """Matriz ``M``"""
-  M::AbstractMatrix{T}
+  M::A
   """Vector ``B``"""
-  B::AbstractVector{T}
+  B::V
   """Matriz ``F``"""
-  F::AbstractMatrix{T}
+  F::A
   """Matriz ``Q`` de covarianzas del error"""
-  Q::AbstractMatrix{T}
+  Q::A
   """``\\Delta t``"""
-  dt
+  dt::T
   """Función que corrige `x` para dejarlo dentro de un dominio."""
-  integrity
+  integrity::I
 end
 
 dt(updater::SimpleLinearUpdater) = updater.dt 
