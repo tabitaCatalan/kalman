@@ -25,7 +25,10 @@ Measurements
 =#
 
 mutable struct Measurements <: ObservableSystem
-    """Vector de mediciones de un sistema físico real"""
+    """Array de mediciones de un sistema físico real.
+    Supone que la primera medición es tomada en tiempo ``t = 0``.
+    Las columnas corresponden a distintos estados/cantidades
+    y las filas a distintos instantes de tiempo."""
     measurements::Array{Float64,2}
     """Si es pedida una observación, se devolverá la `n`-ésima."""
     n::Int
@@ -34,11 +37,11 @@ mutable struct Measurements <: ObservableSystem
     function Measurements(measurements, dt)
       new(measurements, 1, dt)
     end
-  end
+end
 
 number_of_measurements(ms::Measurements) = size(ms.measurements)[1]
 
-# para evitar problemas de redondeo 
+# para evitar problemas de redondeo
 approxfloor(x) = floor(Int, x + eps())
 
 """
@@ -54,7 +57,7 @@ function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, t
     end
 end 
   
-function observe_real_state(ms::Measurements, observer::KalmanObserver, control, error)
+function observe_real_state(ms::Measurements, observer::KalmanObserver, control, t, error)
     ms.measurements[ms.n, :]
 end
 
@@ -76,7 +79,7 @@ function update_real_state!(system::InnerState, updater::KalmanUpdater, control,
     set_inner_state!(system, new_state)
 end 
   
-function observe_real_state(system::InnerState, observer::KalmanObserver, control, error)
+function observe_real_state(system::InnerState, observer::KalmanObserver, control, t, error)
     observer(system.x, control, error)
 end
 
