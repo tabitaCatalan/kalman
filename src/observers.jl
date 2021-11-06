@@ -22,6 +22,10 @@ en el estado.
 """
 dimensions(observer::KalmanObserver) = size(Hn(observer))[1]
 
+state_dimension(obs::KalmanObserver) = size(Hn(obs))[2]
+observation_dimension(obs::KalmanObserver) = size(Hn(obs))[1]
+
+
 #="""
 $(TYPEDSIGNATURES)
 
