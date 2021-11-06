@@ -36,7 +36,7 @@ mutable struct Measurements <: ObservableSystem
     end
   end
   
-function update_real_state!(ms::Measurements, updater::KalmanUpdater, control)
+function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, t)
     if 1 <= ms.n && ms.n <= length(ms.measurements)
         ms.n += 1
     else
@@ -60,8 +60,8 @@ end
 
 # creo que puedo hacer esto más general, definiendolo 
 # para todos los de tipo HasInnerSystem
-function update_real_state!(system::InnerState, updater::KalmanUpdater, control)
-    new_state = update_inner_system(updater, get_inner_state(system), control)
+function update_real_state!(system::InnerState, updater::KalmanUpdater, control, t)
+    new_state = update_inner_system(updater, get_inner_state(system), control, t)
 
     set_inner_state!(system, new_state)
 end 

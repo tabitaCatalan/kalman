@@ -72,7 +72,7 @@ end
 tn(iterator) = iterator.n * dt(iterator.updater)
 
 function update_inner_state!(iterator::SimpleKalmanIterator, control)
-  update_real_state!(iterator.system, iterator.updater, control)
+  update_real_state!(iterator.system, iterator.updater, control, tn(iterator))
   iterator.u = control
 end
 
