@@ -53,26 +53,27 @@ de un estado interno ``x``.
 # Campos
 $(TYPEDFIELDS)
 """
-struct LinearObserver<: KalmanObserver
-  H::AbstractMatrix
-  D::AbstractVector
-  G::AbstractVector
-  """Función que recibe una observación `y` y la corrige para dar valores razonables.
+struct SimpleLinearObserver{T,
+                                M<:AbstractArray{T,2},
+                                V <: AbstractVector{T},
+                                } <: LinearObserver
+  H::M
+  D::V
+  G::M
+  #=
+  Función que recibe una observación `y` y la corrige para dar valores razonables.
   Por ejemplo, para el caso de observar un sistema epidemiológico, no tiene sentido 
   que una variable sea negativa. Se podría definir `integrity(y) = max.(y,0.)`.
-  """
-  integrity
-end
+  =#
+  #integrity::I
+end 
 
-function (observer::LinearObserver)(x::AbstractArray, u::Real, error)
-  observer.integrity(observer.H * x + observer.D * u + observer.G * error)
-end
-
-Hn(observer::LinearObserver) = observer.H
-Dn(observer::LinearObserver) = observer.D
-Gn(observer::LinearObserver) = observer.G
+Hn(observer::SimpleLinearObserver) = observer.H
+Dn(observer::SimpleLinearObserver) = observer.D
+Gn(observer::SimpleLinearObserver) = observer.G
 
 function kalman_size(observer::KalmanObserver)
   H = Hn(observer)
-  size(H')
+  n,m = size(H)
+  m,n
 end
