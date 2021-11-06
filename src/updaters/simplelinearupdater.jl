@@ -14,18 +14,20 @@ donde ``N_n`` es un número aleatorio (dado por una variable aleatorio normal
 $(TYPEDFIELDS)
 """
 struct SimpleLinearUpdater{T, 
-                          A <:AbstractArray{T,2},
+                          A1 <:AbstractArray{T,2},
                           V <: AbstractVector{T},
-                          I <: Integrity
+                          A2 <:AbstractArray{T,2},
+                          A3 <:AbstractArray{T,2},
+                          I <: Function
                           } <: LinearizableUpdater
   """Matriz ``M``"""
-  M::A
+  M::A1
   """Vector ``B``"""
   B::V
   """Matriz ``F``"""
-  F::A
+  F::A2
   """Matriz ``Q`` de covarianzas del error"""
-  Q::A
+  Q::A3
   """``\\Delta t``"""
   dt::T
   """Función que corrige `x` para dejarlo dentro de un dominio."""
