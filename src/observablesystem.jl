@@ -32,9 +32,6 @@ struct Measurements{T, A <: AbstractArray{T, 2}} <: ObservableSystem
     measurements::A
     """Intervalo de *sampleo*."""
     dt::T
-    function Measurements(measurements, dt)
-      new(measurements, dt)
-    end
 end
 
 number_of_measurements(ms::Measurements) = size(ms.measurements)[1]
