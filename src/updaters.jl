@@ -109,20 +109,18 @@ struct SimpleLinearUpdater{T,
   """Función que corrige `x` para dejarlo dentro de un dominio."""
   integrity::I
 end
-
+Mn(updater::SimpleLinearUpdater) = updater.M
+Bn(updater::SimpleLinearUpdater) = updater.B
+Fn(updater::SimpleLinearUpdater) = updater.F
+Qn(updater::SimpleLinearUpdater) = updater.Q
 dt(updater::SimpleLinearUpdater) = updater.dt 
+integrity(up::SimpleLinearUpdater) = up.integrity
 
-function (updater::SimpleLinearUpdater)(x::AbstractArray, u::Real, t, noise)
-  updater.integrity(updater.M * x + updater.B * u + updater.F * noise)
+function (up::SimpleLinearUpdater)(x::AbstractArray, u::Real, t, noise)
+  integrity(up)(Mn(up) * x + Bn(up) * u + Fn(up) * noise)
 end
 
 update_inner_system(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, t) = updater(x, u, t, rand(noiser(updater)))
 update_aproximation(updater::SimpleLinearUpdater, x::AbstractArray, u::Real, t) = updater(x, u, t, zeros(dimensions(updater)))
 
-
 function update!(L::SimpleLinearUpdater, hatx, hatP, control, t) end # no necesita actualizarse
-
-Mn(updater::SimpleLinearUpdater) = updater.M
-Bn(updater::SimpleLinearUpdater) = updater.B
-Fn(updater::SimpleLinearUpdater) = updater.F
-Qn(updater::SimpleLinearUpdater) = updater.Q
