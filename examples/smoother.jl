@@ -1,7 +1,7 @@
 # Smoother 
 
 
-function full_iteration_saver(iterator::KalmanFilter.LinearKalmanIterator,
+function full_iteration_saver(iterator::KalmanFilter.SimpleKalmanIterator,
                                 dt, N, control_function, ensamble_size
                                 )
 
