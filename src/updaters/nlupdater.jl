@@ -24,7 +24,7 @@ En todo tiempo guarda una versión linealizada del sistema, en torno a un punto
 mutable struct NLUpdater{T, D <: Discretizer,
                          M <: AbstractArray{T, 2},
                          L <: SimpleLinearUpdater,
-                         I <: Integrity
+                         I <: Function
                          } <: LinearizableUpdater
   discretizer::D
   F::M
@@ -46,7 +46,7 @@ dimensiones de `x0` y ser semidefinida positiva.
 - `integrity`: función que transforma un vector `x` para que cumple ciertas 
   restricciones de integridad (ser positivo, etc).
 """
-function NLUpdater(discretizer::Discretizer, F::AbstractArray{T, 2}, Q, x0, α0, t0, integrity::Integrity) where T <: AbstractFloat
+function NLUpdater(discretizer::Discretizer, F::AbstractArray{T, 2}, Q::AbstractArray{T, 2}, x0::AbstractVector{T}, α0::AbstractFloat, t0::AbstractFloat, integrity::Function) where T <: AbstractFloat
   linear = linearize_x(discretizer, x0, α0, t0, F, Q, integrity)
   NLUpdater(discretizer, F, linear, integrity)
 end
@@ -93,7 +93,7 @@ $(TYPEDEF)
 - `Q`: matriz de covarianza del ruido 
 - `integrity`: función de `x`, que conserva el valor dentro de un dominio.
 """
-function linearize_x(discretizer::Discretizer, x, α, t, F, Q, integrity::Integrity)
+function linearize_x(discretizer::Discretizer, x, α, t, F, Q, integrity::Function)
   M = jacobian_x(discretizer, x, α, t)
   B = discretizer(x, α, t) - M * x 
   SimpleLinearUpdater(M, B, F, Q, dt(discretizer), integrity)
