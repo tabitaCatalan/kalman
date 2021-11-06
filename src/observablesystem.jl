@@ -35,9 +35,19 @@ mutable struct Measurements <: ObservableSystem
       new(measurements, 1, dt)
     end
   end
-  
+
+number_of_measurements(ms::Measurements) = size(ms.measurements)[1]
+
+# para evitar problemas de redondeo 
+approxfloor(x) = floor(Int, x + eps())
+
+"""
+Determine measurement index to read from time `t`.
+"""
+get_index(ms::Measurements, t) = min(approxfloor(t / ms.dt) + 1, number_of_measurements(ms))
+
 function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, t)
-    if 1 <= ms.n && ms.n <= length(ms.measurements)
+    if 1 <= ms.n && ms.n <= number_of_measurements(ms)
         ms.n += 1
     else
         println("No hay más mediciones disponibles")
