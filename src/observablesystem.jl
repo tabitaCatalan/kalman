@@ -24,14 +24,14 @@ function set_inner_state(::IsMeasurements, x) error("A system of this type has n
 Measurements 
 =#
 
-struct Measurements <: ObservableSystem
+struct Measurements{T, A <: AbstractArray{T, 2}} <: ObservableSystem
     """Array de mediciones de un sistema físico real.
     Supone que la primera medición es tomada en tiempo ``t = 0``.
     Las columnas corresponden a distintos estados/cantidades
     y las filas a distintos instantes de tiempo."""
-    measurements::Array{Float64,2}
+    measurements::A
     """Intervalo de *sampleo*."""
-    dt
+    dt::T
     function Measurements(measurements, dt)
       new(measurements, dt)
     end
@@ -56,9 +56,9 @@ end
 #= 
 Inner State 
 =#
-struct InnerState <: ObservableSystem
+struct InnerState{T, A <: AbstractVector{T}} <: ObservableSystem
     """Vector de estado"""
-    x::Vector{Float64}
+    x::A
 end
   
 #InnerSystemTrait(::InnerState) = HastInnerSystem()
