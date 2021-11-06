@@ -20,8 +20,8 @@ include("src\\NLObserver.jl")
 #==================================# 
 
 
-episystem_a(x, α, p) = [episystem_full(x[1:6], x[7],p); 0.]
-epijacobian_a_x(x, α, p) = [epijacobian_full_x(x[1:6], x[7], p) epijacobian_full_u(x[1:6], x[7],p); zeros(7)']
+episystem_a(x, α, p, t) = [episystem_full(x[1:6], x[7],p); 0.]
+epijacobian_a_x(x, α, p, t) = [epijacobian_full_x(x[1:6], x[7], p) epijacobian_full_u(x[1:6], x[7],p); zeros(7)']
 
 tildeP = (x) -> tildeF(x) * tildeF(x)'
 p1 = (gammae = 1/6.2, gammai = 1/7.8, phi = 0.48, pe = 0.08, pin = 0.6, pim = 0.3)
