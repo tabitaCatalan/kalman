@@ -37,9 +37,15 @@ donde ``Q`` es la matriz de covarianzas del `LinearizableUpdater`.
 #==================================================================
 Implementación sencilla de la interfaz: LinearObserver
 ===================================================================#
+
+abstract type LinearObserver <: KalmanObserver end
+
+#noise(obs::LinearObserver, dt) = rand(Normal(dt), observation_dimension(obs))
+(obs::LinearObserver)(x, u, error) = Hn(obs) * x + Dn(obs) * u + Gn(obs) * error #noise(obs, dt)
+
 """
 $(TYPEDEF)
-Representa un observador lineal simple de la forma
+Representa un observador lineal simple de la forma. Las matrices son constantes.
 ```math
 y_n = H x_n + D u_n + G_n N_n
 ```
