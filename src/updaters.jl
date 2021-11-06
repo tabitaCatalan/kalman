@@ -72,6 +72,11 @@ noiser(updater::LinearizableUpdater) = MvNormal(zeros(dimensions(updater)), Qn(u
 
 #= LinearUpdater define la interfaz de KalmanUpdater =#
 
+abstract type Integrity end
+# An example of how to use integrity class
+struct MaxIntegrity <: Integrity end
+(f::MaxIntegrity)(x) = max.(x,0.)
+
 """
 $(TYPEDEF)
 Define un actualizador lineal constante.
