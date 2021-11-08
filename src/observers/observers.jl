@@ -5,11 +5,13 @@
 
 abstract type KalmanObserver end
 
+isLinearizableObserver(::KalmanUpdater) = false
 
 function (observer::KalmanObserver)(x::AbstractArray, u::Real, error) error("Evaluation method not defined for observer") end
 
 abstract type LinearizableObserver <: KalmanObserver end
 
+isLinearizableObserver(::LinearizableObserver) = true
 
 function Hn(::LinearizableObserver) error("Defin a Hn para LinearizableObserver") end
 function Dn(::LinearizableObserver) error("Defin a Dn para LinearizableObserver") end
