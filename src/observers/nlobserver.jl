@@ -19,6 +19,7 @@ struct NLObserver<: LinearizableObserver
     H # funcion no lineal H(x,α)
     DxH # D_x H ... eventualmente hay que agregar DaH 
     G # matriz que pondera al ruido
+    R # matriz de covarianzas de ruido 
     linear::LinearObserver
     """Función que recibe una observación `y` y la corrige para dar valores razonables.
     Por ejemplo, para el caso de observar un sistema epidemiológico, no tiene sentido 
@@ -41,19 +42,19 @@ struct NLObserver<: LinearizableObserver
     - `integrity`: función que transforma un vector `y` para que cumple ciertas 
     restricciones de integridad (ser positivo, etc).
     """
-    function NLObserver(H, DxH, G, x0, α, integrity)
-        linear = linearize_x(H, DxH, x0, α, G, integrity)
-        new(H, DxH, G, linear, integrity)
+    function NLObserver(H, DxH, G, R, x0, α, integrity)
+        linear = linearize_x(H, DxH, x0, α, G, R)
+        new(H, DxH, G, R, linear, integrity)
     end
 end
 
 function (observer::NLObserver)(x::AbstractArray, u::Real, error)
-    observer.integrity(observer.H(x, u) + observer.G * error)
+    observer.integrity(observer.H(x, u) + Gn(observer) * error)
 end
 
 # Necesito la versión linealizada de esto... tengo que definir Hn, Dn, Gn 
 function linearize_x(NLob::NLObserver, x, α)
-    linearize_x(NLob.H, NLOb.DxH, x, α, NLob.G, NLob.integrity)
+    linearize_x(NLob.H, NLOb.DxH, x, α, Gn(NLob), Rn(NLob))
 end
 
 """
@@ -66,13 +67,13 @@ end
 - `G`: matriz de dispersión del ruido. 
 - `integrity`: función de `x`, que conserva el valor dentro de un dominio.
 """
-function linearize_x(funcH, funcJxH, x, α, G, integrity)
+function linearize_x(funcH, funcJxH, x, α, G, R)
     H = funcJxH(x, α)
     D = funcH(x, α) - H * x 
-    LinearObserver(H, D, G, integrity)
+    SimpleLinearObserver(H, D, G, R)
 end
   
 Hn(observer::NLObserver) = Hn(observer.linear)
 Dn(observer::NLObserver) = Dn(observer.linear)
-Gn(observer::NLObserver) = Gn(observer.linear)
-
+Gn(observer::NLObserver) = observer.G
+Rn(observer::NLObserver) = observer.R
