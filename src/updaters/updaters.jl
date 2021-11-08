@@ -12,6 +12,9 @@ function update!(L::KalmanUpdater, hatx, hatP, control, t) error("Updating metho
 #function (updater::KalmanUpdater)(x::AbstractArray, u::Real, noise) error("Evaluation method not defined") end
 function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_inner_system") end
 function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_aproximation") end
+function forecast(updater::KalmanUpdater, hatx, hatP, control, t) error("Forecasting method not defined for updater") end 
+
+function forecast_with_error(updater::KalmanUpdater, hatx, hatP, control, t) error("Forecasting with error method not defined for updater") end 
 
 function dt(updater::KalmanUpdater) error("dt method not defined for updater") end
 
