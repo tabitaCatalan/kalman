@@ -74,6 +74,8 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
   end
 end
 
+isLinearizable(iterator::SimpleKalmanIterator) = isLinearizableUpdater(iterator.updater) && isLinearizableObserver(iterator.observer)
+
 tn(iterator) = iterator.n * dt(iterator.updater)
 
 function update_inner_state!(iterator::SimpleKalmanIterator, control)
