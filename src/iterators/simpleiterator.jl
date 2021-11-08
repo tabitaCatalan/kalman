@@ -15,8 +15,7 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
                                     OSy <: ObservableSystem, 
                                     OSt <: ObservedState, 
                                     U <: KalmanUpdater, 
-                                    O <: KalmanObserver, 
-                                    UD <: UnivariateDistribution, 
+                                    O <: KalmanObserver,  
                                     A <: AbstractVector{T}
                                     } <: KalmanIterator
   """Número de iteración actual ``n``. Se inicializa en 0."""
@@ -41,8 +40,6 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
   Un observador lineal que entrega observaciones ``y_n`` del estado real.
   """
   observer::O
-  """Una distribución que permite agregar ruido al sistema. Por defecto es una ``\\mathcal{N}(0,1)``."""
-  noiser::UD
   """
   Vector de parámetros ``\\alpha \\in [0,1]`` (uno para cada estado) de un filtro paso bajo que permite eliminar las
   oscilaciones en el estado luego de hacer el análisis. Si ``\\alpha \\approx 1``, entonces 
@@ -71,8 +68,7 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
     #X = StochasticState(x0, 0.)
     hatX = ObservedState(copy(x0), copy(P0))
     next_hatX = ObservedState(copy(x0), copy(P0))
-    noiser = Normal(0.,sqrt(dt))
-    new{T, typeof(system), typeof(hatX), typeof(updater), typeof(observer), typeof(noiser), typeof(alpha)}(n, 1., system, hatX, next_hatX, updater, observer, noiser, alpha)
+    new{T, typeof(system), typeof(hatX), typeof(updater), typeof(observer), typeof(alpha)}(n, 1., system, hatX, next_hatX, updater, observer, alpha)
   end
 end
 
