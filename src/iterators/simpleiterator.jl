@@ -193,6 +193,11 @@ function full_iteration(iterator, dt, N, control_function, ensamble_size; obsche
   results = InnerStateSeries(N, dimensions)
   ensamble = EnsamblesStoring(ensamble_size, dimensions, N)
 
+  if obscheck && !isLinearizable(iterator)
+    obscheck = false
+    print("Can't check observabiblity. Observer or Updater not Linearizable.")
+  end
+
   for i in 1:N
     #print(i)
     control = control_function(i * dt)
@@ -217,8 +222,8 @@ function full_iteration(iterator, dt, N, control_function, ensamble_size; obsche
 end
 
 function check_observability(iterator::SimpleKalmanIterator)
-  H = KalmanFilter.Hn(iterator.observer)
-  M = KalmanFilter.Mn(iterator.updater)
+  H = Hn(iterator)
+  M = Mn(iterator)
   n = size(M)[1]
   obs_matrix = copy(H)
   for i = 1:(n-1)
