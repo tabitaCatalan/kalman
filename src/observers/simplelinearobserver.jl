@@ -10,12 +10,13 @@ de un estado interno ``x``.
 $(TYPEDFIELDS)
 """
 struct SimpleLinearObserver{T,
-                                M<:AbstractArray{T,2},
+                                M1 <:AbstractArray{T,2},
                                 V <: AbstractVector{T},
+                                M2 <:AbstractArray{T,2}
                                 } <: LinearObserver
-  H::M
+  H::M1
   D::V
-  G::M
+  G::M2
   #=
   Función que recibe una observación `y` y la corrige para dar valores razonables.
   Por ejemplo, para el caso de observar un sistema epidemiológico, no tiene sentido 
