@@ -23,7 +23,7 @@ rk = KalmanFilter.RK4Du(rkx, epijacobian_full_u)
 plot(ts, control_pieces.(ts), label = "Control real")
 
 Q = Diagonal(sqrt(dt) * ones(5))
-# Definimos las estructuras necesarias para crear un `LinearKalmanIterator`.
+# Definimos las estructuras necesarias para crear un `SimpleKalmanIterator`.
 nlupdater = NLUpdater(rk,F, Q, x0, a₀, (x) -> state_integrity(x, sum(x0)))
 #nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces, 1.)
 #observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, tildex0)
@@ -31,7 +31,7 @@ observer = KalmanFilter.LinearObserver(H, zeros(1), G, observation_integrity)
 system = KalmanFilter.InnerState(x0)
 P0 = F(x0) * Q * F(x0)' 
 isposdef(P0) # debería ser true
-iterator = KalmanFilter.LinearKalmanIterator(x0, P0, nlupdater, observer, system, dt)
+iterator = KalmanFilter.SimpleKalmanIterator(x0, P0, nlupdater, observer, system, dt)
 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
 # en las variables que aparecen abajo.

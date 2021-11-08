@@ -13,18 +13,18 @@ Define un `Discretizer` con el método de Euler progresivo.
 # Campos
 $(FIELDS)
 """
-struct Euler <: Discretizer
+struct Euler{F1 <: Function, F2 <: Function, P, T} <: Discretizer
   """
   La función tal que ``x' = f(x,\\alpha, p, t)``, donde ``x`` es el estado,
   ``\\alpha `` un control, ``p`` son parámetros extra y ``t`` es el tiempo.
   """
-  f
+  f::F1
   """``D_x f (x,\\alpha, p, t)``, el diferencial de ``f`` con respecto a ``x``."""
-  Dxf
+  Dxf::F2
   """Parámetros extra ``p``."""
-  p
+  p::P
   """Tamaño del paso temporal ``\\Delta t``, tal que ``t_{n+1} = t_n + \\Delta t``."""
-  dt
+  dt::T
 end
 
 (eu::Euler)(x, α, t) = x + eu.dt * eu.f(x, α , eu.p, t)
@@ -38,16 +38,16 @@ Define un `Discretizer` con el método Runge-Kutta de orden 4.
 # Campos
 $(FIELDS)
 """
-struct SimpleRK4 <: RK4
+struct SimpleRK4{F1 <: Function, P, T} <: RK4
   """
   La función tal que ``x' = f(x,\\alpha, p, t)``, donde ``x`` es el estado,
   ``\\alpha `` un control, ``p`` son parámetros extra y ``t`` es el tiempo.
   """
-  f
+  f::F1
   """Parámetros extra ``p``."""
-  p
+  p::P
   """Tamaño del paso temporal ``\\Delta t``, tal que ``t_{n+1} = t_n + \\Delta t``."""
-  dt
+  dt::T
 end
 
 """
@@ -57,18 +57,18 @@ diferenciado con respecto a la variable ``x``.
 # Campos
 $(FIELDS)
 """
-struct RK4Dx <: RK4
+struct RK4Dx{F1 <: Function, F2 <: Function, P, T} <: RK4
   """
   La función tal que ``x' = f(x,\\alpha, p, t)``, donde ``x`` es el estado,
   ``\\alpha `` un control, ``p`` son parámetros extra y ``t`` es el tiempo.
   """
-  f
+  f::F1
   """``D_x f (x,\\alpha, p, t)``, el diferencial de ``f`` con respecto a ``x``."""
-  Dxf
+  Dxf::F2
   """Parámetros extra ``p``."""
-  p
+  p::P
   """Tamaño del paso temporal ``\\Delta t``, tal que ``t_{n+1} = t_n + \\Delta t``."""
-  dt
+  dt::T
 end
 
 function get_ks(rk::RK4, x, α, t)

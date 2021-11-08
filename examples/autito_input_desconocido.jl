@@ -38,7 +38,7 @@ begin
   observer2 = LinearObserver(tildeH, zeros(1), G)
   X2 = StochasticState(tildex0, 0.)
   hatX2 = ObservedState(tildex0, tildeP)
-  iterator2 = LinearKalmanIterator(X2, hatX2, updater2, observer2, tildeP, Normal())
+  iterator2 = SimpleKalmanIterator(X2, hatX2, updater2, observer2, tildeP, Normal())
 
   for i in 1:N
     control = 1.

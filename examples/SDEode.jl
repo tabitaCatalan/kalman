@@ -106,13 +106,12 @@ system = KalmanFilter.Measurements(observaciones, dt)
 α[end] = 0.3
 iterator = KalmanFilter.SimpleKalmanIterator(x0prima, tildeP(x0prima), nlupdater, observer, system, dt, α);
 #iterator = KalmanFilter.SimpleKalmanIterator(x0prima, tildeP(x0prima), odeupdater, observer, system, dt, α)
-#enkf = KalmanFilter.EnKF(initial_states, nlupdater, observer, system, dt)
 #==================================# 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
 # en las variables que aparecen abajo.
 #results, ensamble = KalmanFilter.full_iteration(enkf, dt, N, t -> 0., length(initial_states))
 #results, ensamble = KalmanFilter.full_iteration(iterator, dt, size(total_RM)[1]-1, t -> 0., 1)
-#@time KalmanFilter.next_iteration!(iterator, 2e-7)
+results, ensamble = KalmanFilter.full_iteration(iterator, dt, N, t -> 0., 1)
 
 results, ensamble = KalmanFilter.full_iteration(iterator, dt, N, t -> 0., 1)
 
