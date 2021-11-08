@@ -11,37 +11,42 @@ observaciones del sistema interno.
 # Campos
 $(FIELDS)
 """
-mutable struct SimpleKalmanIterator{T} <: KalmanIterator
+mutable struct SimpleKalmanIterator{T<:AbstractFloat,
+                                    OSy <: ObservableSystem, 
+                                    OSt <: ObservedState, 
+                                    U <: KalmanUpdater, 
+                                    O <: KalmanObserver, 
+                                    UD <: UnivariateDistribution} <: KalmanIterator
   """Número de iteración actual ``n``. Se inicializa en 0."""
   n::Int
   """Control ``u_{n-1}`` usado para llegar al estado actual"""
-  u::Real
+  u::T
   """Sistema"""
-  system::ObservableSystem
+  system::OSy
   """
   Aproximación del estado interno ``\\hat{x}_{n,n}``, y una estimación de la matriz
   de covarianzas ``\\hat{P}_{n,n}`` del error ``x_n - \\hat{x}_{n,n}``.
   """
-  hatX::ObservedState{T}
+  hatX::OSt
   """
   Estimación ``\\hat{x}_{n,n-1}`` del estado ``x_n`` antes de conocer la observación
   ``y_n`` (solo contando con información hasta ``y_{n-1}``).
   """
-  next_hatX::ObservedState{T}
+  next_hatX::OSt
   """`KalmanUpdater` que permite actualizar tanto el estado interno como las aproximaciones."""
-  updater::KalmanUpdater
+  updater::U
   """
   Un observador lineal que entrega observaciones ``y_n`` del estado real.
   """
-  observer::KalmanObserver
+  observer::O
   """Una distribución que permite agregar ruido al sistema. Por defecto es una ``\\mathcal{N}(0,1)``."""
-  noiser::UnivariateDistribution
+  noiser::UD
   """
   Parámetro ``\\alpha \\in [0,1]`` de un filtro paso bajo que permite eliminar las
   oscilaciones en el estado luego de hacer el análisis. Si ``\\alpha \\approx 1``, entonces 
   no se hace correción, si ``\\alpha \\approx 0``, se suprimen casi todas las oscilaciones.
   """
-  alpha 
+  alpha::T
   """
   $(TYPEDSIGNATURES)
   Crea un iterador que almacena un estado interno.
