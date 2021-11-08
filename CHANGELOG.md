@@ -12,6 +12,17 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 
 ## Unreleased
 
+## Versión `v0.11.0` - 2021-11-08 
+- ![Performance][badge-perf] Optimización del código, mejoras en la *type stability* (#10).
+- ![Changed][badge-changed] `LinearKalmanIterator` cambia a `SimpleLinearIterator`.
+- ![Changed][badge-changed] Cambia la interfaz de `KalmanObserver`, ahora necesita manejar el error (no lo recibe de `KalmanIterator`)
+- ![Changed][badge-changed] Cambia la interfaz de `SimpleLinearObserver`, ahora necesita manejar recibir una matriz de covarianza de ruido `R` y ya no recibe una función `integrity`.
+- ![Added][badge-added] Nuevo tipo abstracto `LinearizableObserver`.
+- ![Changed][badge-changed] Cambia la interfaz de `ObservableSystem`, `observe_real_state` recibe el tiempo.
+- ![Removed][badge-removed] Se eliminan `ObservedState` y `StochasticState`.
+- ![Added][badge-added] Nuevas funciones para `LinearizableObserver`s: `state_dimension`, `observation_dimension`.
+
+
 ## Versión `v0.10.1` - 2021-10-25 
 - ![Fixed][badge-fixed] `ODEForecaster` ya puede usar la nueva interfaz de `Discretizer`.
 - ![Added][badge-added] Se agrega el *keyword argument* `obscheck` (`true` por defecto) a la función `full_iteration`. Permite suprimir el checkeo de observabilidad local. Útil cuando se usan `KalmanUpdater`s que no son del tipo `LinearizableUpdater`, como `ODEForecaster`.
@@ -103,6 +114,7 @@ Hice muchos cambios sin preocuparme del versionamiento, así que este incluye mu
 [badge-deprecated]: https://img.shields.io/static/v1?label=&message=Deprecated&color=orange&style=flat-square
 [badge-changed]: https://img.shields.io/static/v1?label=&message=Changed&color=blue&style=flat-square 
 [badge-fixed]: https://img.shields.io/static/v1?label=&message=Fixed&color=blueviolet&style=flat-square 
+[badge-perf]: https://img.shields.io/static/v1?label=&message=Fixed&color=blueviolet&style=flat-square 
 [badge-experimental]: https://img.shields.io/static/v1?label=&message=Experimental&color=ff69b4&style=flat-square
 [badge-broken]: https://img.shields.io/static/v1?label=&message=Broken&color=lightgrey&style=flat-square
 
