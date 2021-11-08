@@ -69,7 +69,7 @@ function update_real_state!(system::InnerState, updater::KalmanUpdater, control,
 end 
   
 function observe_real_state(system::InnerState, observer::KalmanObserver, control, t, error)
-    observer(system.x, control, error)
+    observe_with_error(observer, system.x, control)
 end
 
 function get_inner_state(system::InnerState) system.x end
