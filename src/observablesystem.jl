@@ -46,7 +46,7 @@ get_index(ms::Measurements, t) = min(approxfloor(t / ms.dt) + 1, number_of_measu
 
 function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, t) end 
   
-function observe_real_state(ms::Measurements, observer::KalmanObserver, control, t, error)
+function observe_real_state(ms::Measurements, observer::KalmanObserver, control, t)
     ms.measurements[get_index(ms, t), :]
 end
 
@@ -68,7 +68,7 @@ function update_real_state!(system::InnerState, updater::KalmanUpdater, control,
     set_inner_state!(system, new_state)
 end 
   
-function observe_real_state(system::InnerState, observer::KalmanObserver, control, t, error)
+function observe_real_state(system::InnerState, observer::KalmanObserver, control, t)
     observe_with_error(observer, system.x, control)
 end
 

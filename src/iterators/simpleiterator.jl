@@ -146,14 +146,13 @@ KalmanGain(iterator) = KalmanGain(iterator, next_hatP(iterator))
 
 # Observar
 function observe_inner_system(iterator::SimpleKalmanIterator)
-  noise = rand(iterator.noiser)
-  observe_real_state(iterator.system, iterator.observer, un(iterator), tn(iterator), noise)
+  observe_real_state(iterator.system, iterator.observer, un(iterator), tn(iterator))
 end
 
-function observe_observed_system(iterator::SimpleKalmanIterator)
-  tempX = StochasticState(next_hatx(iterator), un(iterator))
-  iterator.observer(tempX, 0.)
-end
+#function observe_observed_system(iterator::SimpleKalmanIterator)
+#  tempX = StochasticState(next_hatx(iterator), un(iterator))
+#  iterator.observer(tempX, 0.)
+#end
 
 function update_updater!(iterator::SimpleKalmanIterator)
   update!(iterator.updater, hatx(iterator), hatP(iterator), un(iterator), tn(iterator))
