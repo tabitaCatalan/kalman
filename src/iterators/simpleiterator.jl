@@ -65,14 +65,14 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
   function SimpleKalmanIterator(x0::AbstractVector{T}, P0::AbstractMatrix{T},
       updater::KalmanUpdater,
       observer::KalmanObserver, system::ObservableSystem,
-      dt, alpha = ones(size(x0))) where T <: Real
+      dt::T, alpha::AbstractArray{T} = ones(size(x0))) where T <: AbstractFloat
     n = 0
     # verificar que α es escalar o que tiene el mismo tamaño que x0 
     #X = StochasticState(x0, 0.)
     hatX = ObservedState(copy(x0), copy(P0))
     next_hatX = ObservedState(copy(x0), copy(P0))
     noiser = Normal(0.,sqrt(dt))
-    new{T}(n, 1., system, hatX, next_hatX, updater, observer, noiser, alpha)
+    new{T, typeof(system), typeof(hatX), typeof(updater), typeof(observer), typeof(noiser), typeof(alpha)}(n, 1., system, hatX, next_hatX, updater, observer, noiser, alpha)
   end
 end
 
