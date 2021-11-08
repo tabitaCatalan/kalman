@@ -64,15 +64,15 @@ en el estado.
 """
 dimensions(updater::LinearizableUpdater) = size(Mn(updater))[1]
 
+noiser(Q) = MvNormal(zeros(size(Q)[1]), Q)
+
 """
 $(TYPEDSIGNATURES)
 
 Devuelve una distribución normal multivariada ``\\mathcal{N}(0, Q)``, 
 donde ``Q`` es la matriz de covarianzas del `LinearizableUpdater`.
 """
-noiser(updater::LinearizableUpdater) = MvNormal(zeros(dimensions(updater)), Qn(updater))
-
-
+noiser(updater::LinearizableUpdater) = noiser(Qn(updater))
 
 #= LinearUpdater define la interfaz de KalmanUpdater =#
 
