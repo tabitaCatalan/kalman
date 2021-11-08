@@ -20,7 +20,7 @@ observer = KalmanFilter.LinearObserver(H,zeros(1),G)
 T = 60
 N = Int(T/dt)
 
-iterator = KalmanFilter.LinearKalmanIterator(x0, F*F', updater, observer)
+iterator = KalmanFilter.SimpleKalmanIterator(x0, F*F', updater, observer)
 observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, dt, N, t -> 1.)
 
 

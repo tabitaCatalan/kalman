@@ -3,11 +3,11 @@ using ComponentArrays
 using LinearAlgebra
 
 # Usar misma estructura que differential equations... preservar interfaz
-mutable struct ODEForecaster <: KalmanFilter.KalmanUpdater
+mutable struct ODEForecaster <: KalmanUpdater
     dt 
     n_steps::Int 
     #Xn::ComponentArray # creo que es innececsario
-    discret_momentum::KalmanFilter.Discretizer
+    discret_momentum::Discretizer
     """Función que corrige un estado `x` para dejarlo dentro de cierto dominio."""
     integrity
 end

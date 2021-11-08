@@ -20,14 +20,14 @@ plot(ts, control_pieces.(ts), label = "Control real")
 a₀ = 1.; Fₐ = 1.5
 tildeP = [F * F' zeros(5); zeros(5)' Fₐ]
 
-# Definimos las estructuras necesarias para crear un `LinearKalmanIterator`.
+# Definimos las estructuras necesarias para crear un `SimpleKalmanIterator`.
 
 Q = Diagonal(sqrt(dt) * ones(5))
 nlupdater = NLUpdater(rk,F, Q, x0, a₀, (x) -> state_integrity(x, sum(x0)))
 nlaugmented = KalmanFilter.NLUpdaterUnknowInput(nlupdater, control_pieces, a₀)
 observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G)
 system = KalmanFilter.InnerState(tildex0)
-iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP, nlaugmented, observer, system, dt)
+iterator = KalmanFilter.SimpleKalmanIterator(tildex0, tildeP, nlaugmented, observer, system, dt)
 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
 # en las variables que aparecen abajo.

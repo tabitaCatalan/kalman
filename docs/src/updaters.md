@@ -7,22 +7,44 @@ Para que funciones correctamente deben implementarse los siguientes métodos:
 Métodos a implementar | Breve descripción
 --- | ---
 `update!(L::KalmanUpdater, hatx, hatP, control, t)` | un método que permita actualizar al iterador y dejarlo listo para la siguiente iteración. Cuando se usan matrices ``M_n := M, B_n := B, F_n:= F`` contantes se puede dejar en blanco, pero debería usarse, por ejemplo, para linearlizar en torno a ``\hat{x}_n`` cuando se usa un `KalmanUpdater` no lineal.
-`forecast(updater::KalmanUpdater, hatx, hatP, control, t)` | Devuelve una tupla que contiene a ``\hat{x}_{n+1, n}, \hat{P}_{n+1, n}`` a partir de ``\hat{x}_{n,n}``(`hatx`), ``\hat{P}_{n,n}``(`hatP`) y un control.
+`update_inner_system(updater::KalmanUpdater x::AbstractArray, u::Real, t)` | Evalúa el `updater` en la dinámica y agrega error dado por `noise(updater)`, para obtener el seguiente estado.
+`update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, t)` | Evalúa el `updater` en la dinámica y no agrega error.
+`forecast(updater::KalmanUpdater, hatx, hatP, control, t)` | Devuelve un `ComponentArray`[^1] que contiene a ``\hat{x}_{n+1, n}, \hat{P}_{n+1, n}`` a partir de ``\hat{x}_{n,n}``(`hatx`), ``\hat{P}_{n,n}``(`hatP`) y un control.
 `dt(updater::KalmanUpdater)` | ``\Delta t``
 
-## `LinearizableUpdater`
-Un grupo importante de `KalmanUpdater`s serán los que, o bien son lineales de la forma
+[^1]: [ComponentArrays.jl](https://github.com/jonniedie/ComponentArrays.jl)
+
+Métodos opcionales | |Breve descripción 
+--- | ---
+`forecast_with_error(updater::KalmanUpdater, hatx, hatP, control, t)` | Permite hacer una predicción del siguiente estado agregando error.
+
+!!! info "*Forecast* con error"
+    La función `forecast_with_error` solo es necesaria si se quiere usar [Filtro por ensambles: `EnKF`](@ref) <!--TODO: agregar referencia a EnKF-->  Esto permite hacer un paso de *forecast* e incluir error.
+
+Métodos disponibles | Breve descripción
+--- | ---
+`isLinearizableUpdater(::KalmanUpdater)` | `false` por defecto
+
+## La clase de `LinearizableUpdater`s
+
+Una clase importarte dentro de `KalmanUpdater` es `LinearizableUpdater`.
+
+```@docs 
+KalmanFilter.LinearizableUpdater
+```
+
+Consisten en los *updaters* que , o bien son lineales de la forma
 
 ```math
-x_{n+1} = M_n x_n + B_n u_n + F_n N_n
+x_{n+1} = M_n x_n + B_n u_n + F_n w_n
 ```
-(donde ``M_n, F_n`` son matrices, ``x_n, N_n, B_n`` vectores y ``u_n`` es un control escalar), o bien, en caso de ser no lineales ``x_{n+1} = \mathcal{M}(x_n, u_n)``, pueden ser linealizados a la forma anterior.
+(donde ``M_n, F_n`` son matrices, ``x_n, B_n`` vectores, ``u_n`` es un control escalar y ``v_n \sim \mathcal{N}(0, Q_n)`` es un vector de ruido gaussiano), o bien, en caso de ser no lineales ``x_{n+1} = \mathcal{M}(x_n, u_n)``, pueden ser linealizados a la forma anterior.
 
 Los miembros de esta clase necesitan implementar: 
 
 Métodos a implementar | Breve descripción
 --- | ---
-`Mn`, `Bn`, `Fn`| De la linearización en el estado actual
+`Mn`, `Bn`, `Fn`, `Qn`| De la linearización en el estado actual
 
 Los miembros de esta clase tienen automáticamente definidos los métodos:
 
@@ -31,8 +53,6 @@ forecast(updater::LinearizableUpdater, hatx, hatP, control, t)
 forecast_with_error(updater::LinearizableUpdater, hatx, hatP, control, t)
 forecast_hatP(updater::LinearizableUpdater, hatP)
 ```
-!!! info "Forecast con error"
-    Para usar `EnKF`<!--TODO: agregar referencia a EnKF--> es necesario que el `KalmanUpdater` usado tenga implementado `forecast_with_error`. Esto permite hacer un paso de *forecast* e incluir error.
 
 Cuentan además con las siguientes funciones
 

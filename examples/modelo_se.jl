@@ -63,7 +63,7 @@ control(t, limit) = t <= limit ? 1. : 0.5
 
 control(0.1, 12)
 #Juno.@enter KalmanFilter.full_iteration(iterator, N)
-iterator = KalmanFilter.LinearKalmanIterator(x0,F*F',nlupdater,observer)
+iterator = KalmanFilter.SimpleKalmanIterator(x0,F*F',nlupdater,observer)
 observations, real_states, analysis, forecast, errors_analysis, errors_forecast = KalmanFilter.full_iteration(iterator, dt, N, t -> control(t, 50.))
 using Plots
 

@@ -24,50 +24,52 @@ function set_inner_state(::IsMeasurements, x) error("A system of this type has n
 Measurements 
 =#
 
-mutable struct Measurements <: ObservableSystem
-    """Vector de mediciones de un sistema físico real"""
-    measurements::Array{Float64,2}
-    """Si es pedida una observación, se devolverá la `n`-ésima."""
-    n::Int
+struct Measurements{T, A <: AbstractArray{T, 2}} <: ObservableSystem
+    """Array de mediciones de un sistema físico real.
+    Supone que la primera medición es tomada en tiempo ``t = 0``.
+    Las columnas corresponden a distintos estados/cantidades
+    y las filas a distintos instantes de tiempo."""
+    measurements::A
     """Intervalo de *sampleo*."""
-    dt
-    function Measurements(measurements, dt)
-      new(measurements, 1, dt)
-    end
-  end
+    dt::T
+end
+
+number_of_measurements(ms::Measurements) = size(ms.measurements)[1]
+
+# para evitar problemas de redondeo
+approxfloor(x) = floor(Int, x + eps())
+
+"""
+Determine measurement index to read from time `t`.
+"""
+get_index(ms::Measurements, t) = min(approxfloor(t / ms.dt) + 1, number_of_measurements(ms))
+
+function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, t) end 
   
-function update_real_state!(ms::Measurements, updater::KalmanUpdater, control)
-    if 1 <= ms.n && ms.n <= length(ms.measurements)
-        ms.n += 1
-    else
-        println("No hay más mediciones disponibles")
-    end
-end 
-  
-function observe_real_state(ms::Measurements, observer::KalmanObserver, control, error)
-    ms.measurements[ms.n, :]
+function observe_real_state(ms::Measurements, observer::KalmanObserver, control, t)
+    ms.measurements[get_index(ms, t), :]
 end
 
 #= 
 Inner State 
 =#
-struct InnerState <: ObservableSystem
+struct InnerState{T, A <: AbstractVector{T}} <: ObservableSystem
     """Vector de estado"""
-    x::Vector{Float64}
+    x::A
 end
   
 #InnerSystemTrait(::InnerState) = HastInnerSystem()
 
 # creo que puedo hacer esto más general, definiendolo 
 # para todos los de tipo HasInnerSystem
-function update_real_state!(system::InnerState, updater::KalmanUpdater, control)
-    new_state = update_inner_system(updater, get_inner_state(system), control)
+function update_real_state!(system::InnerState, updater::KalmanUpdater, control, t)
+    new_state = update_inner_system(updater, get_inner_state(system), control, t)
 
     set_inner_state!(system, new_state)
 end 
   
-function observe_real_state(system::InnerState, observer::KalmanObserver, control, error)
-    observer(system.x, control, error)
+function observe_real_state(system::InnerState, observer::KalmanObserver, control, t)
+    observe_with_error(observer, system.x, control)
 end
 
 function get_inner_state(system::InnerState) system.x end

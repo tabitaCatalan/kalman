@@ -76,7 +76,7 @@ function forecast_observed_state!(enkf::EnKF, control)
 end
 
 function observe_inner_system(enkf::EnKF)
-    observe_real_state(enkf.system, enkf.observer, enkf.u, rand(enkf.noiser))
+    observe_real_state(enkf.system, enkf.observer, enkf.u, tn(iterator), rand(enkf.noiser))
 end
 
 function observe_forecasted_system(enkf::EnKF)

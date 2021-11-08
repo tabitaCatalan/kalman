@@ -13,7 +13,7 @@ include("common_defs_enkf.jl")
 
 #plot(ts, control_pieces.(ts), label = "Control real")
 
-# Definimos las estructuras necesarias para crear un `LinearKalmanIterator`.
+# Definimos las estructuras necesarias para crear un `SimpleKalmanIterator`.
 
 
 episystem_a(x, α, p) = [episystem_full(x[1:5], x[6],p); 0.]
@@ -26,7 +26,7 @@ odeupdater = KalmanFilter.ODEForecaster(dt, 10, tildex0, tildeP0, tildeF, episys
 observer = KalmanFilter.LinearObserver(tildeH, zeros(1), G, observation_integrity)
 #system = KalmanFilter.InnerState(tildex0)
 #system = KalmanFilter.Measurements(total_RM, 1.)
-iterator = KalmanFilter.LinearKalmanIterator(tildex0, tildeP0, odeupdater, observer, system, dt)
+iterator = KalmanFilter.SimpleKalmanIterator(tildex0, tildeP0, odeupdater, observer, system, dt)
 #enkf = KalmanFilter.EnKF(states, updater, observer, system, dt)
 #==================================# 
 # Y realizamos un total de `N` iteraciones, guardando los estamos intermedios
