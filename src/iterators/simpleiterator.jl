@@ -1,4 +1,4 @@
-
+using ComponentArrays
 ################################################################################
 
 """
@@ -13,7 +13,8 @@ $(FIELDS)
 """
 mutable struct SimpleKalmanIterator{T<:AbstractFloat,
                                     OSy <: ObservableSystem, 
-                                    OSt <: ObservedState, 
+                                    CA1 <: ComponentArray, 
+                                    CA2 <: ComponentArray, 
                                     U <: KalmanUpdater, 
                                     O <: KalmanObserver,  
                                     A <: AbstractVector{T}
@@ -28,12 +29,12 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
   Aproximación del estado interno ``\\hat{x}_{n,n}``, y una estimación de la matriz
   de covarianzas ``\\hat{P}_{n,n}`` del error ``x_n - \\hat{x}_{n,n}``.
   """
-  hatX::OSt
+  hatX::CA1
   """
   Estimación ``\\hat{x}_{n,n-1}`` del estado ``x_n`` antes de conocer la observación
   ``y_n`` (solo contando con información hasta ``y_{n-1}``).
   """
-  next_hatX::OSt
+  next_hatX::CA1
   """`KalmanUpdater` que permite actualizar tanto el estado interno como las aproximaciones."""
   updater::U
   """
@@ -66,10 +67,21 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
     n = 0
     # verificar que α es escalar o que tiene el mismo tamaño que x0 
     #X = StochasticState(x0, 0.)
-    hatX = ObservedState(copy(x0), copy(P0))
-    next_hatX = ObservedState(copy(x0), copy(P0))
-    new{T, typeof(system), typeof(hatX), typeof(updater), typeof(observer), typeof(alpha)}(n, 1., system, hatX, next_hatX, updater, observer, alpha)
+    #hatX = ObservedState(copy(x0), copy(P0))
+    hatX = ComponentArray(x = copy(x0), P = copy(P0))
+    next_hatX = ComponentArray(x = copy(x0), P = copy(P0))
+    new{T, typeof(system), typeof(hatX), typeof(next_hatX), typeof(updater), typeof(observer), typeof(alpha)}(n, 1., system, hatX, next_hatX, updater, observer, alpha)
   end
+end
+
+function set_hatX!(iterator::SimpleKalmanIterator, x, P)
+  iterator.hatX.x = x 
+  iterator.hatX.P = P
+end
+
+function set_next_hatX!(iterator::SimpleKalmanIterator, x, P)
+  iterator.next_hatX.x = x 
+  iterator.next_hatX.P = P
 end
 
 isLinearizable(iterator::SimpleKalmanIterator) = isLinearizableUpdater(iterator.updater) && isLinearizableObserver(iterator.observer)
@@ -89,7 +101,7 @@ end
 function analyse!(iterator::SimpleKalmanIterator, observation)
   hatPₙ₊₁ₙ₊₁ = analyse_hatP(iterator)
   hatxₙ₊₁ₙ₊₁ = analyse_hatx(iterator, observation)
-  iterator.hatX = ObservedState(lowpass(iterator, hatxₙ₊₁ₙ₊₁), hatPₙ₊₁ₙ₊₁)
+  set_hatX!(iterator, lowpass(iterator, hatxₙ₊₁ₙ₊₁), hatPₙ₊₁ₙ₊₁)
 end
 
 function lowpass(xₙ, yₙ₋₁, α) # si α ≈ 0, entonces se suaviza mucho 
@@ -106,7 +118,7 @@ end
 
 # Getters de matrices y fórmulas para actualizar y todo eso
 
-#Mn(iterator::KalmanIterator) = Mn(iterator.updater)
+Mn(iterator::KalmanIterator) = Mn(iterator.updater)
 #Bn(iterator::KalmanIterator) = Bn(iterator.updater)
 #Fn(iterator::KalmanIterator) = Fn(iterator.updater)
 Hn(iterator::KalmanIterator) = Hn(iterator.observer)
@@ -120,12 +132,11 @@ Rn(iterator::KalmanIterator) = Gn(iterator) * Gn(iterator)'
 #xn(iterator::SimpleKalmanIterator) = iterator.X.x
 un(iterator::SimpleKalmanIterator) = iterator.u
 
-hatx(iterator::SimpleKalmanIterator) = iterator.hatX.hatx
-hatP(iterator::SimpleKalmanIterator) = iterator.hatX.hatP
+hatx(iterator::SimpleKalmanIterator) = iterator.hatX.x
+hatP(iterator::SimpleKalmanIterator) = iterator.hatX.P
 
-next_hatP(iterator) = iterator.next_hatX.hatP
-next_hatx(iterator) = iterator.next_hatX.hatx
-
+next_hatx(iterator) = iterator.next_hatX.x
+next_hatP(iterator) = iterator.next_hatX.P
 
 En(iterator, hatPnp1n) = Rn(iterator) + Hn(iterator) * hatPnp1n * Hn(iterator)'
 En(iterator) = En(iterator, next_hatP(iterator))
@@ -161,7 +172,7 @@ end
 function forecast_observed_state!(iterator::SimpleKalmanIterator, control)
   # forecast P para calcular K y E
   Xₙ₊₁ₙ = forecast(iterator, control) # idem
-  iterator.next_hatX = ObservedState(Xₙ₊₁ₙ.x, Xₙ₊₁ₙ.P)
+  set_next_hatX!(iterator, Xₙ₊₁ₙ.x, Xₙ₊₁ₙ.P)
 end
 
 
