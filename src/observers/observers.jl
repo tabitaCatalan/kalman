@@ -22,6 +22,7 @@ isLinearizableObserver(::LinearizableObserver) = true
 function Hn(::LinearizableObserver) error("Defin a Hn para LinearizableObserver") end
 function Dn(::LinearizableObserver) error("Defin a Dn para LinearizableObserver") end
 function Gn(::LinearizableObserver) error("Defin a Gn para LinearizableObserver") end
+function Rn(::LinearizableObserver) error("Defin a Rn para LinearizableObserver") end
 
 #=
 Forma interna de agregar el ruido a las observaciones 
@@ -37,7 +38,8 @@ dimensions(observer::LinearizableObserver) = size(Hn(observer))[1]
 state_dimension(obs::LinearizableObserver) = size(Hn(obs))[2]
 observation_dimension(obs::LinearizableObserver) = size(Hn(obs))[1]
 
-
+noiser(observer::LinearizableObserver) = noiser(Rn(observer))
+(obs::LinearizableObserver)(x::AbstractArray, u::Real, error)= Hn(obs) * x + Dn(obs) * u + Gn(obs) * error #noise(obs, dt)
 #="""
 $(TYPEDSIGNATURES)
 
@@ -52,7 +54,4 @@ Implementación sencilla de la interfaz: LinearObserver
 
 abstract type LinearObserver <: LinearizableObserver end
 
-noiser(observer::LinearObserver) = noiser(Rn(observer))
-
 #noise(obs::LinearObserver, dt) = rand(Normal(dt), observation_dimension(obs))
-(obs::LinearObserver)(x::AbstractArray, u::Real, error)= Hn(obs) * x + Dn(obs) * u + Gn(obs) * error #noise(obs, dt)
