@@ -5,6 +5,9 @@ using Distributions, Random, ComponentArrays
 
 # Interfaz que debe ser definida por las estructuras tipo `KalmanUpdater`.
 abstract type KalmanUpdater end
+
+isLinearizableUpdater(::KalmanUpdater) = false
+
 function update!(L::KalmanUpdater, hatx, hatP, control, t) error("Updating method not defined") end
 #function (updater::KalmanUpdater)(x::AbstractArray, u::Real, noise) error("Evaluation method not defined") end
 function update_inner_system(updater::KalmanUpdater, x::AbstractArray, u::Real, t) error("Implement update_inner_system") end
@@ -25,6 +28,8 @@ De no ser así, será obligatorio definir
 `forecast(updater::KalmanUpdater, hatx, hatP, control, t)` 
 =================================================================#
 abstract type LinearizableUpdater <: KalmanUpdater end
+
+isLinearizableUpdater(::LinearizableUpdater) = true # holy traits 
 
 function Mn(::LinearizableUpdater) error("Por favor defina Mn para LinearizableUpdater") end
 function Bn(::LinearizableUpdater) error("Por favor defina Bn para LinearizableUpdater") end
