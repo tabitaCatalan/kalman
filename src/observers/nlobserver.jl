@@ -3,14 +3,14 @@ Observador con una función no lineal del estado y = h(x,u,v)
 =#
 
 """
-(TYPEDEF)
+$(TYPEDEF)
 Representa un observador no lineal de la forma
 ```math
 y_n = h(x_n, u_n) + G_n v_n
 ```
 de un estado interno ``x``.
 # Campos
-(TYPEDFIELDS)
+$(TYPEDFIELDS)
 """
 struct NLObserver<: LinearizableObserver
     """Función ``h`` posiblemente no lineal de tres entradas, que recibe un estado ``x``
@@ -27,7 +27,7 @@ struct NLObserver<: LinearizableObserver
     """
     integrity
     """
-    (TYPEDSIGNATURES)
+    $(TYPEDSIGNATURES)
     Constructor de un observador no lineal `NLObserver`.
     Es de la forma  
     ```math
@@ -58,7 +58,7 @@ function linearize_x(NLob::NLObserver, x, α)
 end
 
 """
-(TYPEDEF)
+$(TYPEDEF)
 # Argumentos 
 - `funcH`: función ``\\mathcal{H}(x, \\alpha)`` posiblemente no lineal para observar el estado.
 - `funcJxH`: ``D_x\\mathcal{H}`` jacobiano con respecto al estado.
