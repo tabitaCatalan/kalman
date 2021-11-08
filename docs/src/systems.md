@@ -9,7 +9,7 @@ La interfaz requiere los siguientes métodos
 Métodos a implementar | Breve descripción
 ---|---
 `update_real_state!(system::ObservableSystem, updater::KalmanUpdater, control, error)` | Transforma el estado interno ``x_n`` en ``x_{n+1}``, por medio de un `KalmanUpdater`. Puede usarse para actualizar el número de iteración ``n`` a ``n+1``, para poder obtener, por ejemplo, una nueva medición la próxima vez que sea pedida. 
-`observe_real_state(system::ObservableSystem, observer::KalmanObserver, control, error)` | Entrega una medición del estado real.
+`observe_real_state(system::ObservableSystem, observer::KalmanObserver, control, t)` | Entrega una medición del estado real.
 
 Los `ObservableSystem`s que almacenen un estado interno pueden definir además los siguientes métodos.
 
