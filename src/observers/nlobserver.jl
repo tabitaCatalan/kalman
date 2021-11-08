@@ -12,7 +12,7 @@ de un estado interno ``x``.
 # Campos
 (TYPEDFIELDS)
 """
-struct NLObserver<: KalmanObserver
+struct NLObserver<: LinearizableObserver
     """Función ``h`` posiblemente no lineal de tres entradas, que recibe un estado ``x``
     y devuelve la observación ``y``, ``y = h(x,u,v)``. ``v`` corresponde a un ruido y
     ``u`` a un control."""

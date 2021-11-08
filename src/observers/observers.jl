@@ -6,10 +6,14 @@
 abstract type KalmanObserver end
 
 
-function (observer::KalmanObserver)(x::AbstractArray, u::Real, error) error("Evaluation method not defined") end
-function Hn(::KalmanObserver) error("Hn no definida") end
-function Dn(::KalmanObserver) error("Dn no definida") end
-function Gn(::KalmanObserver) error("Gn no definida") end
+function (observer::KalmanObserver)(x::AbstractArray, u::Real, error) error("Evaluation method not defined for observer") end
+
+abstract type LinearizableObserver <: KalmanObserver end
+
+
+function Hn(::LinearizableObserver) error("Defin a Hn para LinearizableObserver") end
+function Dn(::LinearizableObserver) error("Defin a Dn para LinearizableObserver") end
+function Gn(::LinearizableObserver) error("Defin a Gn para LinearizableObserver") end
 
 #=
 Forma interna de agregar el ruido a las observaciones 
@@ -20,10 +24,10 @@ $(TYPEDSIGNATURES)
 Devuelve el número de dimensiones que puede soportar el `LinearizableUpdater`
 en el estado. 
 """
-dimensions(observer::KalmanObserver) = size(Hn(observer))[1]
+dimensions(observer::LinearizableObserver) = size(Hn(observer))[1]
 
-state_dimension(obs::KalmanObserver) = size(Hn(obs))[2]
-observation_dimension(obs::KalmanObserver) = size(Hn(obs))[1]
+state_dimension(obs::LinearizableObserver) = size(Hn(obs))[2]
+observation_dimension(obs::LinearizableObserver) = size(Hn(obs))[1]
 
 
 #="""
@@ -38,7 +42,7 @@ donde ``Q`` es la matriz de covarianzas del `LinearizableUpdater`.
 Implementación sencilla de la interfaz: LinearObserver
 ===================================================================#
 
-abstract type LinearObserver <: KalmanObserver end
+abstract type LinearObserver <: LinearizableObserver end
 
 #noise(obs::LinearObserver, dt) = rand(Normal(dt), observation_dimension(obs))
 (obs::LinearObserver)(x, u, error) = Hn(obs) * x + Dn(obs) * u + Gn(obs) * error #noise(obs, dt)
