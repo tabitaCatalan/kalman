@@ -16,7 +16,9 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
                                     OSt <: ObservedState, 
                                     U <: KalmanUpdater, 
                                     O <: KalmanObserver, 
-                                    UD <: UnivariateDistribution} <: KalmanIterator
+                                    UD <: UnivariateDistribution, 
+                                    A <: AbstractVector{T}
+                                    } <: KalmanIterator
   """Número de iteración actual ``n``. Se inicializa en 0."""
   n::Int
   """Control ``u_{n-1}`` usado para llegar al estado actual"""
@@ -42,11 +44,11 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
   """Una distribución que permite agregar ruido al sistema. Por defecto es una ``\\mathcal{N}(0,1)``."""
   noiser::UD
   """
-  Parámetro ``\\alpha \\in [0,1]`` de un filtro paso bajo que permite eliminar las
+  Vector de parámetros ``\\alpha \\in [0,1]`` (uno para cada estado) de un filtro paso bajo que permite eliminar las
   oscilaciones en el estado luego de hacer el análisis. Si ``\\alpha \\approx 1``, entonces 
   no se hace correción, si ``\\alpha \\approx 0``, se suprimen casi todas las oscilaciones.
   """
-  alpha::T
+  alpha::A
   """
   $(TYPEDSIGNATURES)
   Crea un iterador que almacena un estado interno.
