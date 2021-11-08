@@ -4,7 +4,6 @@ export SimpleLinearUpdater, NLUpdater
 
 using DocStringExtensions
 
-include("states.jl")
 include(joinpath("updaters","updaters.jl"))
 include(joinpath("updaters","simplelinearupdater.jl"))
 include(joinpath("observers","observers.jl"))

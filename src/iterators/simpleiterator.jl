@@ -65,9 +65,6 @@ mutable struct SimpleKalmanIterator{T<:AbstractFloat,
       observer::KalmanObserver, system::ObservableSystem,
       dt::T, alpha::AbstractArray{T} = ones(size(x0))) where T <: AbstractFloat
     n = 0
-    # verificar que α es escalar o que tiene el mismo tamaño que x0 
-    #X = StochasticState(x0, 0.)
-    #hatX = ObservedState(copy(x0), copy(P0))
     hatX = ComponentArray(x = copy(x0), P = copy(P0))
     next_hatX = ComponentArray(x = copy(x0), P = copy(P0))
     new{T, typeof(system), typeof(hatX), typeof(next_hatX), typeof(updater), typeof(observer), typeof(alpha)}(n, 1., system, hatX, next_hatX, updater, observer, alpha)
@@ -155,11 +152,6 @@ KalmanGain(iterator) = KalmanGain(iterator, next_hatP(iterator))
 function observe_inner_system(iterator::SimpleKalmanIterator)
   observe_real_state(iterator.system, iterator.observer, un(iterator), tn(iterator))
 end
-
-#function observe_observed_system(iterator::SimpleKalmanIterator)
-#  tempX = StochasticState(next_hatx(iterator), un(iterator))
-#  iterator.observer(tempX, 0.)
-#end
 
 function update_updater!(iterator::SimpleKalmanIterator)
   update!(iterator.updater, hatx(iterator), hatP(iterator), un(iterator), tn(iterator))

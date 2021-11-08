@@ -15,11 +15,6 @@ function update_aproximation(updater::KalmanUpdater, x::AbstractArray, u::Real, 
 
 function dt(updater::KalmanUpdater) error("dt method not defined for updater") end
 
-################################################################################
-
-function (updater::KalmanUpdater)(state::StochasticState, t, error)
-  updater(state.x, state.u, t, error)
-end
 #=================================================================
 Las funciones que siguen solo sirven para el caso en que updater 
 es linealizable, es decir, que tiene definidas las funciones 
