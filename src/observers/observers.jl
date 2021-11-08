@@ -55,4 +55,4 @@ abstract type LinearObserver <: LinearizableObserver end
 noiser(observer::LinearObserver) = noiser(Rn(observer))
 
 #noise(obs::LinearObserver, dt) = rand(Normal(dt), observation_dimension(obs))
-(obs::LinearObserver)(x, u, error) = Hn(obs) * x + Dn(obs) * u + Gn(obs) * error #noise(obs, dt)
+(obs::LinearObserver)(x::AbstractArray, u::Real, error)= Hn(obs) * x + Dn(obs) * u + Gn(obs) * error #noise(obs, dt)
