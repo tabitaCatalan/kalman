@@ -9,6 +9,12 @@ isLinearizableObserver(::KalmanUpdater) = false
 
 function (observer::KalmanObserver)(x::AbstractArray, u::Real, error) error("Evaluation method not defined for observer") end
 
+function noiser(observer::KalmanObserver) error("noiser not defined for observer") end
+
+function observe_with_error(observer::KalmanObserver, x, u)
+    observer(x, u, rand(noiser(observer)))
+end 
+
 abstract type LinearizableObserver <: KalmanObserver end
 
 isLinearizableObserver(::LinearizableObserver) = true
@@ -45,6 +51,8 @@ Implementación sencilla de la interfaz: LinearObserver
 ===================================================================#
 
 abstract type LinearObserver <: LinearizableObserver end
+
+noiser(observer::LinearObserver) = noiser(Rn(observer))
 
 #noise(obs::LinearObserver, dt) = rand(Normal(dt), observation_dimension(obs))
 (obs::LinearObserver)(x, u, error) = Hn(obs) * x + Dn(obs) * u + Gn(obs) * error #noise(obs, dt)
