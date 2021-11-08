@@ -22,7 +22,7 @@ Permite realizar iterar con el filtro de Kalman de toda la vida.
 KalmanFilter.LinearKalmanIterator
 ```
 
-## EnKF 
+## Filtro por ensambles: `EnKF`
 
 Permite iterar un ensamble de estados aproximados, los que representan una muestra de la distribución de los estados en el tiempo indicado. Esto permite generar aproximaciones con el promedio y la covarianza muestral de los datos.
 

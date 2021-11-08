@@ -9,7 +9,7 @@ Se espera que un `KalmanObserver` implemente la siguiente interfaz:
 Métodos a implementar | Breve descripción
 ---|---
 `(ob::KalmanObserver)(x::AbstractArray, u::Real, error)` | Este método permite evaluar el `KalmanObserver` en un estado `x`. Se usa para hacer una observación del sistema aproximado con `error`, evaluando en ``\hat{x_n}`` y el control ``u_n`` para devolver una observación ``\hat{y}_n``.
-`noiser(observer::KalmanObserver)` | Devuelve una Distribución (usualmente gaussiana centrada en ``0``). Para que funcione `observe_with_error` se requiere que la dimensión de `rand(noiser(observer))` sea la misma que la de las observaciones.
+`noiser(observer::KalmanObserver)` | Devuelve una distribución (usualmente gaussiana centrada en ``0``). Para que funcione `observe_with_error` se requiere que la dimensión de `rand(noiser(observer))` sea la misma que la de las observaciones.
 
 
 Métodos disponibles | Breve descripción 
@@ -17,7 +17,7 @@ Métodos disponibles | Breve descripción
 `observe_with_error(observer::KalmanObserver, x, u)` | Observa el estado `x` con error en la medición dado por `rand(noiser(observer))`.
 `isLinearizableObserver(::KalmanUpdater)` | `false` por defecto. 
 
-## La clase de `LinearObserver`s
+## La clase de `LinearizableObserver`s
 
 Una clase importarte (y de hecho, todos los `KalmanObserver`s implementados por defecto pertenecen a ella) es `LinearizableObserver`.
 
@@ -43,11 +43,13 @@ Métodos a implementar | Breve descripción
 Métodos disponibles | Breve descripción 
 --- |--- 
 `isLinearizableObserver(::KalmanUpdater)` | `true` 
-`noiser(observer::LinearizableObserver)` | Devuelve una `Distribution` normal multivariada centrada en ``0`` y con matriz de covarianzas `Rn(observer)`.
+`noiser(observer::LinearizableObserver)` | Devuelve una `distribution` [^1] normal multivariada centrada en ``0`` y con matriz de covarianzas `Rn(observer)`.
 `observe_with_error(observer::KalmanObserver, x, u)` | Observar el estado `x` con error en la medición dado por `noiser(observer)`.
 `state_dimension(obs::LinearizableObserver)` | De cuántas dimensiones es el estado ``x`` que el `obs`ervador puede observar.
 `observation_dimension(obs::LinearizableObserver)` | Dimensión de las observaciones ``y``.
 `(obs::LinearizableObserver)(x::AbstractArray, u::Real, error)` | `Hn(obs) * x + Dn(obs) * u + Gn(obs) * error`
+
+[^1]: [Distributions.jl](https://github.com/JuliaStats/Distributions.jl)
 
 Existe también la clase `LinearObserver` pero no define ni requiere métodos nuevos 
 
