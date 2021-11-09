@@ -15,6 +15,10 @@ function observe_with_error(observer::KalmanObserver, x, u)
     observer(x, u, rand(noiser(observer)))
 end 
 
+function observe_without_error(observer::KalmanObserver, x, u)
+    observer(x, u, zeros(observation_dimension(observer)))
+end 
+
 abstract type LinearizableObserver <: KalmanObserver end
 
 isLinearizableObserver(::LinearizableObserver) = true

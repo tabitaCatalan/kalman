@@ -110,7 +110,7 @@ function lowpass(iterator::SimpleKalmanIterator, hatx_new)
 end
 
 function observe_forecasted_system(iterator::SimpleKalmanIterator)
-  iterator.observer(next_hatx(iterator), un(iterator), 0.)
+  observe_without_error(iterator.observer, next_hatx(iterator), un(iterator))
 end
 
 # Getters de matrices y fórmulas para actualizar y todo eso
