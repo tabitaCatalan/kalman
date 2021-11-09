@@ -11,6 +11,7 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 - Hacer notebooks de los archivos de ejemplo `SDE`.
 
 ## Unreleased
+- ![Fixed][badge-fixed] Interfaz de `KalmanObserver` incluye las funciones `observe_with_error` y `observe_without_error`.
 
 ## Versión `v0.11.0` - 2021-11-08 
 - ![Performance][badge-perf] Optimización del código, mejoras en la *type stability* (#10).
@@ -21,7 +22,7 @@ El formato está basado en su mayor parte en [Keep a Changelog](https://keepacha
 - ![Changed][badge-changed] Cambia la interfaz de `ObservableSystem`, `observe_real_state` recibe el tiempo.
 - ![Removed][badge-removed] Se eliminan `ObservedState` y `StochasticState`.
 - ![Added][badge-added] Nuevas funciones para `LinearizableObserver`s: `state_dimension`, `observation_dimension`.
-
+- ![Changed][badge-changed] Cambia la interfaz de `NLUpdater`, ahora ya no recibe una función de dispersión de ruido, solo una constante.
 
 ## Versión `v0.10.1` - 2021-10-25 
 - ![Fixed][badge-fixed] `ODEForecaster` ya puede usar la nueva interfaz de `Discretizer`.
