@@ -1,5 +1,5 @@
 
-using LinearAlgebra
+using LinearAlgebra: I 
 
 abstract type Discretizer end
 
@@ -71,41 +71,41 @@ struct RK4Dx{F1 <: Function, F2 <: Function, P, T} <: RK4
   dt::T
 end
 
-function get_ks(rk::RK4, x, α, t)
-  p = rk.p; dt = rk.dt
-
+function rungekutta_points(f, x, α, p, t, dt)
   x1 = x
-  k1 = rk.f(x1, α, p, t)
+  k1 = f(x1, α, p, t)
 
   x2 = x1 + dt * k1/2
-  k2 = rk.f(x2, α, p, t)
+  k2 = f(x2, α, p, t)
 
   x3 = x1 + dt * k2/2
-  k3 = rk.f(x3, α, p, t)
+  k3 = f(x3, α, p, t)
 
   x4 = x1 + dt * k3
-  k4 = rk.f(x4, α, p, t)
+  k4 = f(x4, α, p, t)
   (x1, x2, x3, x4), (k1, k2, k3, k4)
 end
 
-function (rk::RK4)(x,α,t)
+function rungekutta_predict(f, x, α, p, t, dt)
+  xs, ks = rungekutta_points(f, x, α, p, t, dt)
 
-  xs, ks = get_ks(rk, x, α, t)
+  x + (dt/6) * (ks[1] + 2 * ks[2] + 2 * ks[3] + ks[4])
+end 
 
-  x + (rk.dt/6) * (ks[1] + 2 * ks[2] + 2 * ks[3] + ks[4])
-end
+function rungekutta_jacobian_x(f, Dxf, x, α, p, t, dt)
+  xs, ks = rungekutta_points(f, x, α, p, t, dt)
 
-function jacobian_x(rk::RK4, x, α, t)
-  dt = rk.dt; p = rk.p
-  xs, ks = get_ks(rk, x, α, t)
-
-  Dₓk₁ = rk.Dxf(xs[1], α, p, t)
+  Dₓk₁ = Dxf(xs[1], α, p, t)
   Dₓx₂ = I + (dt/2) * Dₓk₁
-  Dₓk₂ = rk.Dxf(xs[2], α, p, t) * Dₓx₂
+  Dₓk₂ = Dxf(xs[2], α, p, t) * Dₓx₂
   Dₓx₃ = I + (dt/2) * Dₓk₂
-  Dₓk₃ = rk.Dxf(xs[3], α, p, t) * Dₓx₃
+  Dₓk₃ = Dxf(xs[3], α, p, t) * Dₓx₃
   Dₓx₄ = I + dt * Dₓk₃
-  Dₓk₄ = rk.Dxf(xs[4], α, p, t) * Dₓx₄
+  Dₓk₄ = Dxf(xs[4], α, p, t) * Dₓx₄
 
   I + (dt/6) * (Dₓk₁ + 2 * Dₓk₂ + 2 * Dₓk₃ + Dₓk₄)
-end
+end 
+
+
+(rk::RK4)(x,α,t) = rungekutta_predict(rk.f, x, α, rk.p, t, rk.dt)
+jacobian_x(rk::RK4, x, α, t) = rungekutta_jacobian_x(rk.f, rk.Dxf, x, α, rk.p, t, rk.dt)
