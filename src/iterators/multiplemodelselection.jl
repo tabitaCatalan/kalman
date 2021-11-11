@@ -179,6 +179,7 @@ struct GeneralRK4{F1 <: Function, F2 <: Function, T} <: GeneralDiscretizer
 (rk::GeneralRK4)(x, α, p, t) = KalmanFilter.rungekutta_predict(rk.f, x, α, p, t, rk.dt)
 jacobian_x(rk::GeneralRK4, x, α, p, t) = KalmanFilter.rungekutta_jacobian_x(rk.f, rk.Dxf, x, α, p, t, rk.dt)
 
+
 abstract type KalmanUpdaterWithGeneralDiscretizer end
 
 #= necesito hacer algo con Updater,
@@ -193,10 +194,11 @@ Mn(updater::KalmanUpdaterWithGeneralDiscretizer, x, α, p, t)
 #indepnoisematrix(dt, dims) = Diagonal(sqrt(dt) * SVector{dims}(ones(dims)))
 indepnoisematrix(dt) = sqrt(dt) * I
 
-Mn(updater::KalmanUpdaterWithGeneralDiscretizer, x, params, t) = jacobian_x(updater.discretizer, x, 0., params.p, t) 
-#Bn(updater::KalmanUpdaterWithGeneralDiscretizer, x, α, params, t) = jacobian_x(updater.discretizer, x, α, p, t) 
-Fn(updater::KalmanUpdaterWithGeneralDiscretizer, x, params, t) = make_F(updater)(params.filter_p) 
-Qn(updater::KalmanUpdaterWithGeneralDiscretizer, x, α, params, t) = indepnoisematrix(dt(updater.discretizer))
+
+Mn(updater::CommonUpdater, x, p, t) = jacobian_x(updater.discretizer, x, 0., p, t) 
+#Bn(updater::CommonUpdater, x, α, params, t) = jacobian_x(updater.discretizer, x, α, p, t) 
+Fn(updater::CommonUpdater, filter_p) = make_F(updater)(filter_p) 
+Qn(updater::CommonUpdater) = indepnoisematrix(dt(updater))
 
 
 
