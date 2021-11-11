@@ -25,8 +25,8 @@ using LinearAlgebra: Diagonal, I
 
 # No es exactamente un iterador, no tiene updater ni nada 
 struct SimpleKalmanEstimation{P,CA1 <: ComponentArray, CA2 <: ComponentArray} 
-    """Parameters"""
-    p::P
+    """Parameters. Have 2 components: filter_p (filter) and p (dynamics)."""
+    params::P
     """State and covariance estimation (analysis)"""
     hatX::CA1
     """State and covarianza (forecast)"""
@@ -34,6 +34,11 @@ struct SimpleKalmanEstimation{P,CA1 <: ComponentArray, CA2 <: ComponentArray}
 end 
 # Versiones generales los discretizadores comunes RK4, Euler, etc
 # GeneralDiscretizer(x, a, p, dt) # tiene la misma idea de discretizer pero es más general. Creo que voy a tener que generalizar los que tengo para que funcione.
+
+hatx(estimation::SimpleKalmanEstimation) = estimation.hatX.x
+hatP(estimation::SimpleKalmanEstimation) = estimation.hatX.P
+
+next_hatx(estimation::SimpleKalmanEstimation) = estimation.next_hatX.x
 
 function set_hatX!(estimator::SimpleKalmanEstimation, hatX::ComponentArray) 
     estimator.hatX.x = hatX.x
@@ -44,6 +49,9 @@ function set_next_hatX!(estimator::SimpleKalmanEstimation, hatX::ComponentArray)
     estimator.next_hatX.x = hatX.x
     estimator.next_hatX.P = hatX.P
 end 
+
+dynamic_params(estimation::SimpleKalmanEstimation) = estimation.params.p
+filter_params(estimation::SimpleKalmanEstimation) = estimation.params.filter_p
 
 
 #=
