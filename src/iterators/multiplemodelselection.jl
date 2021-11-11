@@ -244,6 +244,33 @@ function update_approximation(updater::CommonUpdater, hatx, p, t, filter_p)
 end 
 
 #==================================================
+Updater and estimation interactions 
+==================================================# 
+
+
+function forecast_state(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
+    update_approximation(updater, hatx(estimation), dynamic_params(estimation), t, filter_params(estimation))
+end 
+
+function forecast_hatP(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
+    M = Mn(updater, hatx(estimation), dynamic_params(estimation), t)
+    F = Fn(updater, filter_params(estimation))
+    M * hatP(estimation) * M' + F * Qn(updater) * F' 
+end 
+
+function forecast(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
+    hatPnp1 = forecast_hatP(updater, estimation, t)
+    hatxnp1 = forecast_state(updater, estimation, t)
+    ComponentArray(x = hatxnp1, P = hatPnp1)
+end
+
+function forecast_observed_state!(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
+    Xₙ₊₁ₙ = forecast(updater, estimation, t)
+    set_next_hatX!(estimation, Xₙ₊₁ₙ)
+end  
+
+
+#==================================================
  General Observer 
 ==================================================#
 
