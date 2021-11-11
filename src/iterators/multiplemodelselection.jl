@@ -40,10 +40,11 @@ hatx(estimation::SimpleKalmanEstimation) = estimation.hatX.x
 hatP(estimation::SimpleKalmanEstimation) = estimation.hatX.P
 
 next_hatx(estimation::SimpleKalmanEstimation) = estimation.next_hatX.x
+next_hatP(estimation::SimpleKalmanEstimation) = estimation.next_hatX.P
 
-function set_hatX!(estimator::SimpleKalmanEstimation, hatX::ComponentArray) 
-    estimator.hatX.x = hatX.x
-    estimator.hatX.P = hatX.P
+function set_hatX!(estimator::SimpleKalmanEstimation, hatx, hatP) 
+    estimator.hatX.x = hatx
+    estimator.hatX.P = hatP
 end 
 
 function set_next_hatX!(estimator::SimpleKalmanEstimation, hatX::ComponentArray) 
@@ -54,7 +55,18 @@ end
 dynamic_params(estimation::SimpleKalmanEstimation) = estimation.params.p
 filter_params(estimation::SimpleKalmanEstimation) = estimation.params.filter_p
 
+# make_lowpassalpha(filter_p) esta función debe estar en estimation,
+# o debe recibirse o estar definida en algun lado 
+make_lowpassalpha(estimator::SimpleKalmanEstimation) = make_lowpassalpha(filter_params(estimator))
 
+function set_hatX_with_lowpass!(estimator::SimpleKalmanEstimation, hatx, hatP)
+    newhatx = KalmanFilter.lowpass(hatx(estimator), hatx, make_lowpassalpha(estimator))
+    set_hatX!(estimator, newhatx, hatP)
+end 
+
+function set_hatX_with_lowpass!(mmkf::MultipleModelKalman, model_index, hatx, hatP)
+    set_hatX_with_lowpass!(get_model(mmkf, model_index), hatx, hatP)
+end 
 #=
 usando un kalman discretizer es posible calcular next_hatX a partir de next_hatX
 =# 
