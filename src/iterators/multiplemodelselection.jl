@@ -58,23 +58,28 @@ filter_params(estimation::SimpleKalmanEstimation) = estimation.params.filter_p
 usando un kalman discretizer es posible calcular next_hatX a partir de next_hatX
 =# 
 
-struct MultipleModelKalman
+struct MultipleModelKalman{CU <: CommonUpdater, CO <: CommonObserver, Sys <: KalmanFilter.Measurements} # <: KalmanIterator
     # lista de probabilidades
     priors # array 
-    # lista de SimpleKalmanEstimation s  
-    # discretizer, updater, observer, system 
+    models # array de SimpleKalmanEstimation 
+    updater::CU
+    observer::CO
+    system::Sys
+    n # numero de iteracion, o tiempo, etc 
 end 
+# tn(mmkf::MultipleModelKalman) TODO 
 
 how_many_models(mmkf::MultipleModelKalmanFilter) = length(mmkf.priors)
 enumerate_models(mmkf::MultipleModelKalman) = 1:how_many_models(mmkf)
 
-get_prior(mmfk::MultipleModelKalman, model) = mmkf.priors[model]
+get_prior(mmkf::MultipleModelKalman, model_index) = mmkf.priors[model_index]
+get_model(mmkf::MultipleModelKalman, model_index) = mmkf.models[model_index]
 
 function mix_estimation(mmkf::MultipleModelKalman)
-    sum(get_prior(mmkf,i) * hatx(mmkf.model[i]) for i in enumerate_models(mmkf))
+    sum(get_prior(mmkf,i) * hatx(get_model(mmkf, i)) for i in enumerate_models(mmkf))
 end 
 function mix_covariances(mmkf::MultipleModelKalman)
-    sum(get_prior(mmkf, i) * hatP(mmkf.model[i]) for i in enumerate_models(mmkf))
+    sum(get_prior(mmkf, i) * hatP(get_model(mmkf, i)) for i in enumerate_models(mmkf))
 end 
 
 function update_priors!(mmkf::MultipleModelKalman)end 
@@ -87,8 +92,7 @@ function probability_observation_given_p(
     observation)
     r = observation - KalmanFilter.observe_without_error(observer, hatx(estimation))
     S = Hn(observer) * hatP(estimation) * Hn(observer)' + Rn(observer)
-    pdfyp = gaussian_pdf(r, S)
-    pdfyp
+    gaussian_pdf(r, S)
 end 
 
 function probability_observation_given_p(
