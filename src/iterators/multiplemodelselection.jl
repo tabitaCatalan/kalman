@@ -120,7 +120,7 @@ function probability_observation_given_p(
     probability_observation_given_p(mmkf.observer, mmkf.model[model], observation)
 end 
 
-function probability_p_given_observation(mmkf::MultipleModelKalman, observation, model)
+function probability_p_given_observation(mmkf::MultipleModelKalman, observation)
     auxvec = [probability_observation_given_p(mmkf, observation, model) * get_prior(mmfk, model) for model in enumerate_models(mmkf)]
     auxvec ./ sum(auxvec)
 end 
@@ -130,6 +130,8 @@ next_hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatx)
 next_hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatP)
 hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatx)
 hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatP)
+
+tn(iterator) = iterator.n * dt(iterator.updater)
 
 """
 - `method`: las opciones son `:maxprob`, `:weighted`
@@ -162,6 +164,7 @@ function forecast_observed_state!(mmkf::MultipleModelKalman, control)
     for model in enumerate_models(mmkf)
         forecast_observed_state!(updater, get_model(mmkf, model), tn(mmkf))
     end 
+    # update priors 
 end
 
 function observe_inner_system(mmkf::MultipleModelKalman)
@@ -179,7 +182,8 @@ end
 
 function update_updater!(mmkf::MultipleModelKalman) end 
 
-function advance_counter!(mmkf::MultipleModelKalman) end 
+function advance_counter!(mmkf::MultipleModelKalman) mmkf.n += 1 end 
+
 analyse_hatP(mmkf::MultipleModelKalman, model_index) = analyse_hatP(mmkf.observer, get_model(mmkf, model_index))
 analyse_hatx(mmkf::MultipleModelKalman, model_index, observation) = analyse_hatx(mmkf.observer, get_model(mmkf, model_index), observation)
 
