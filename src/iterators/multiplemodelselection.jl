@@ -23,6 +23,19 @@ using KalmanFilter
 using StaticArrays
 using LinearAlgebra: Diagonal, I
 using Distributions: MvNormal, Normal
+using DocStringExtensions 
+
+#========================================================
+Auxs functions 
+========================================================#
+
+#indepnoisematrix(dt, dims) = Diagonal(sqrt(dt) * SVector{dims}(ones(dims)))
+indepnoisematrix(dt) = sqrt(dt) * I
+
+#========================================================
+SimpleKalmanEstimation:
+Estimaciones de los distintos filtros 
+========================================================#
 
 # No es exactamente un iterador, no tiene updater ni nada 
 struct SimpleKalmanEstimation{P,CA1 <: ComponentArray, CA2 <: ComponentArray} 
@@ -63,6 +76,191 @@ function set_hatX_with_lowpass!(estimator::SimpleKalmanEstimation, hatx, hatP)
     newhatx = KalmanFilter.lowpass(hatx(estimator), hatx, make_lowpassalpha(estimator))
     set_hatX!(estimator, newhatx, hatP)
 end 
+
+#========================================================
+GeneralDiscretizer:
+Un discretizador que necesita recibir los parámetros p de la 
+dinámica (a diferencia del frecuentemente utilizado
+`KalmanFilter.Discretizer`. 
+========================================================#
+
+abstract type GeneralDiscretizer <: KalmanFilter.Discretizer end
+
+function (::GeneralDiscretizer)(x,α,p,t) error("No se ha definido un método para este discretizador.") end
+function jacobian_x(ds::GeneralDiscretizer, x, α, p, t) error("No se ha definido método jacobian_x para este discretizador.")  end
+function dt(ds::GeneralDiscretizer) error("No se ha definido método dt para este discretizador.") end
+
+#========================================================
+GeneralRK4:
+Un general discretizer usando el método RungeKutta de orden 4.
+========================================================#
+
+"""No almacena parámmetros, así que debe dársele uno al pedir que discretize."""
+struct GeneralRK4{F1 <: Function, F2 <: Function, T} <: GeneralDiscretizer
+    """
+    La función tal que ``x' = f(x,\\alpha, p, t)``, donde ``x`` es el estado,
+    ``\\alpha `` un control, ``p`` son parámetros extra y ``t`` es el tiempo.
+    """
+    f::F1
+    """``D_x f (x,\\alpha, p, t)``, el diferencial de ``f`` con respecto a ``x``."""
+    Dxf::F2
+    """Tamaño del paso temporal ``\\Delta t``, tal que ``t_{n+1} = t_n + \\Delta t``."""
+    dt::T
+  end
+
+(rk::GeneralRK4)(x, α, p, t) = KalmanFilter.rungekutta_predict(rk.f, x, α, p, t, rk.dt)
+jacobian_x(rk::GeneralRK4, x, α, p, t) = KalmanFilter.rungekutta_jacobian_x(rk.f, rk.Dxf, x, α, p, t, rk.dt)
+
+#========================================================
+CommonUpdater:
+Un actualizador (no lineal) que puede usar GeneralDiscretizers. 
+No es un KalmanFilter.Updater porque no comparten la misma interfaz.
+========================================================#
+
+"""
+$(TYPEDEF)
+
+Actualizador de la forma 
+```math
+x_{n+1} = \\mathcal{M}(x_n, p, t) + F w_n 
+```
+donde ``\\mathcal{M}`` es una dinámica posiblemente no lineal discretizada, ``p`` son parámetros 
+de la dinámica, ``t`` es tiempo, ``F`` una matriz constante de dispersión de ruido y 
+``w_n \\sim \\mathcal{N}(0, Q_n)``. Para simplificar, suponemos que ``Q_n = \\sqrt{\\Delta t} I``, 
+con ``I`` la matriz identidad.
+# Argumentos 
+- `makeF`: que recibe un argumento `filter_p` y retorna la matriz ``F`` de dispersión de ruido del modelo.
+- `discretizer`: guarda la dinámica de un problema continuo, discretizada por medio de algún método 
+numérico como Euler Progresivo, RungeKutta de orden 4, etc. 
+- `make_F`: función que recibe un argumento `filter_p` y produce una matriz de ruido.
+- `integrity`: luego de linealizar, se usa para mantener los estados en valores razonables. Es una función 
+de los estados ``x``.
+# Comentarios
+La diferencia con un `LinearizableUpdater` está en los parámetros, tanto de la dinámica como del filtro de 
+Kalman en sí. `CommonUpdater` está pensado como un actualizador para ser usado con varios filtros distintos, 
+cambiando ya sea los parámetros de la dinámica, o la matriz de dispersión de ruido del modelo del filtro de
+Kalman. Un `LinearizableUpdater`, en cambio, funciona con set de parámetros fijos. Es por ese mismo motivo
+que `CommonUpdater` no usa los `Discretizer`s normales, sino que usa `GeneralDiscretizer`.
+
+"""
+struct CommonUpdater{D <: GeneralDiscretizer, F1 <: Function, F2 <: Function}
+    dims::Int
+    discretizer::D
+    makeF::F1
+    integrity::F2
+end 
+
+
+Mn(updater::CommonUpdater, x, p, t) = jacobian_x(updater.discretizer, x, 0., p, t) 
+#Bn(updater::CommonUpdater, x, α, params, t) = jacobian_x(updater.discretizer, x, α, p, t) 
+Fn(updater::CommonUpdater, filter_p) = make_F(updater)(filter_p) 
+Qn(updater::CommonUpdater) = indepnoisematrix(dt(updater))
+
+make_F(updater::CommonUpdater) = updater.makeF
+dimensions(updater::CommonUpdater) = updater.dims 
+dt(updater::CommonUpdater) = dt(updater.discretizer)
+
+make_noise(updater::CommonUpdater, filter_p) = Fn(updater, filter_p) * rand(Normal(0., sqrt(dt(updater))), dimensions(updater))
+
+function update_approximation(updater::CommonUpdater, hatx, p, t, filter_p)
+    updater.discretizer(hatx, 0., p, t) + make_noise(updater, filter_p)
+end 
+
+#==================================================
+Updater and estimation interactions 
+==================================================# 
+
+
+function forecast_state(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
+    update_approximation(updater, hatx(estimation), dynamic_params(estimation), t, filter_params(estimation))
+end 
+
+function forecast_hatP(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
+    M = Mn(updater, hatx(estimation), dynamic_params(estimation), t)
+    F = Fn(updater, filter_params(estimation))
+    M * hatP(estimation) * M' + F * Qn(updater) * F' 
+end 
+
+function forecast(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
+    hatPnp1 = forecast_hatP(updater, estimation, t)
+    hatxnp1 = forecast_state(updater, estimation, t)
+    ComponentArray(x = hatxnp1, P = hatPnp1)
+end
+
+function forecast_observed_state!(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
+    Xₙ₊₁ₙ = forecast(updater, estimation, t)
+    set_next_hatX!(estimation, Xₙ₊₁ₙ)
+end  
+
+#========================================================
+CommonObserver
+Un observador que requiere de algunos parámetros para 
+funcionar.
+No es un KalmanFilter.KalmanObserver porque no comparten 
+la misma interfaz.
+========================================================#
+
+"""
+Representa un observador lineal de la forma 
+"""
+struct CommonObserver{T <: AbstractFloat, M <: AbstractArray{T, 2}, F1 <: Function, F2 <: Function} 
+    """Observation matrix"""
+    H::M
+    """Función que recibe un argumento `filter_p` y produce una matriz de ruido."""
+    makeG::F1
+    integrity::F2
+    dt::T
+end 
+make_G(observer::CommonObserver) = observer.makeG
+#indepnoisematrix(dt) = sqrt(dt) * I
+
+Hn(observer::CommonObserver) = observer.H 
+#Dn(observer::CommonObserver, x, α, params, t) = jacobian_x(updater.discretizer, x, α, p, t) 
+Gn(observer::CommonObserver, filter_p) = make_G(observer)(filter_p) 
+Rn(observer::CommonObserver) = indepnoisematrix(observer.dt)
+
+state_dimension(observer::CommonObserver) = size(Hn(observer))[2]
+observation_dimension(observer::CommonObserver) = size(Hn(observer))[1]
+
+#make_noise(observer, filter_p) = Gn(observer, filter_p) * rand(zeros(state_dimension(observer)), Rn(observer))
+make_noise(observer::CommonObserver, filter_p) = Gn(observer, filter_p) * rand(Normal(0., sqrt(observer.dt)), state_dimension(observer))
+
+function observe_without_error(observer::CommonObserver, x)
+    Hn(observer) * x 
+end 
+
+function observe_with_error(observer::CommonObserver, x, filter_p)
+    observe_without_error(observer, x) + make_noise(observer, filter_p)
+end 
+
+En(observer::CommonObserver, hatPnp1n, filter_p) = Hn(observer) * hatPnp1n * Hn(observer)' + Gn(observer, filter_p) * Rn(observer) * Gn(observer, filter_p)' 
+KalmanGain(observer::CommonObserver, hatPnp1n, filter_p) = hatPnp1n * Hn(observer)' * inv(En(observer, hatPnp1n, filter_p))
+
+#==================================================
+Observer and estimation interactions 
+==================================================# 
+
+function observe_with_error(observer::CommonObserver, estimation::SimpleKalmanEstimation)
+    observe_with_error(observer, hatx(estimation), filter_params(estimation))
+end 
+
+function observe_forecasted_system(observer::CommonObserver, estimation::SimpleKalmanEstimation)
+    observe_without_error(observer, next_hatx(estimation))
+end
+
+function KalmanGain(observer::CommonObserver, estimation::SimpleKalmanEstimation)
+    KalmanGain(observer, next_hatP(estimation), filter_params(estimation)) 
+end
+
+function analyse_hatP(observer::CommonObserver, estimation::SimpleKalmanEstimation)
+    K = KalmanGain(observer, estimation)
+    (I - K * Hn(observer)) * next_hatP(estimation) * (I - K * Hn(iterator))'
+        + K * Gn(observer, filter_p) * Rn(observer) * Gn(observer, filter_p)' * K'
+end 
+
+function analyse_hatx(observer::CommonObserver, estimation::SimpleKalmanEstimation, observation)
+    next_hatx(estimation) + KalmanGain(observer, estimation) * (observation - observe_forecasted_system(observer, estimation))
+end
 
 #========================================================
 MultipleModelKalman:
@@ -175,11 +373,6 @@ function parameter_estimation(mmkf::MultipleModelKalman, method)
         mmkf.model[maxindx].p
     end 
 end 
-#=
-function forecast(iterator::SimpleKalmanIterator, control)
-    forecast(iterator.updater, hatx(iterator), hatP(iterator), control, tn(iterator))
-end
-=#
 
 #===================================================
 KalmanIterator interface 
@@ -217,215 +410,3 @@ function advance_counter!(mmkf::MultipleModelKalman) mmkf.n += 1 end
 
 analyse_hatP(mmkf::MultipleModelKalman, model_index) = analyse_hatP(mmkf.observer, get_model(mmkf, model_index))
 analyse_hatx(mmkf::MultipleModelKalman, model_index, observation) = analyse_hatx(mmkf.observer, get_model(mmkf, model_index), observation)
-
-
-
-#=
-Qué necesita un Updater 
-- necesita un discretizer general 
-- necesita recibir el parametro 
-=#
-
-abstract type GeneralDiscretizer <: KalmanFilter.Discretizer end
-
-function (::GeneralDiscretizer)(x,α,p,t) error("No se ha definido un método para este discretizador.") end
-function jacobian_x(ds::GeneralDiscretizer, x, α, p, t) error("No se ha definido método jacobian_x para este discretizador.")  end
-function dt(ds::GeneralDiscretizer) error("No se ha definido método dt para este discretizador.") end
-
-"""No almacena parámmetros, así que debe dársele uno al pedir que discretize."""
-struct GeneralRK4{F1 <: Function, F2 <: Function, T} <: GeneralDiscretizer
-    """
-    La función tal que ``x' = f(x,\\alpha, p, t)``, donde ``x`` es el estado,
-    ``\\alpha `` un control, ``p`` son parámetros extra y ``t`` es el tiempo.
-    """
-    f::F1
-    """``D_x f (x,\\alpha, p, t)``, el diferencial de ``f`` con respecto a ``x``."""
-    Dxf::F2
-    """Tamaño del paso temporal ``\\Delta t``, tal que ``t_{n+1} = t_n + \\Delta t``."""
-    dt::T
-  end
-
-(rk::GeneralRK4)(x, α, p, t) = KalmanFilter.rungekutta_predict(rk.f, x, α, p, t, rk.dt)
-jacobian_x(rk::GeneralRK4, x, α, p, t) = KalmanFilter.rungekutta_jacobian_x(rk.f, rk.Dxf, x, α, p, t, rk.dt)
-
-
-abstract type KalmanUpdaterWithGeneralDiscretizer end
-
-#= necesito hacer algo con Updater,
-tal vez tenga que hacer algo más general.
-Este updater será diferente; Mn por ejemplo no se puede calcular sin 
-el parámetro p. Puede que incluso necesite recibir el tiempo, ya que 
-Updater no lo maneja internamente y no tendrá la versión linealizada.
-También va a necesitar una función de integridad más que seguro 
-Mn(updater::KalmanUpdaterWithGeneralDiscretizer, x, α, p, t)
-=#
-
-#indepnoisematrix(dt, dims) = Diagonal(sqrt(dt) * SVector{dims}(ones(dims)))
-indepnoisematrix(dt) = sqrt(dt) * I
-
-
-Mn(updater::CommonUpdater, x, p, t) = jacobian_x(updater.discretizer, x, 0., p, t) 
-#Bn(updater::CommonUpdater, x, α, params, t) = jacobian_x(updater.discretizer, x, α, p, t) 
-Fn(updater::CommonUpdater, filter_p) = make_F(updater)(filter_p) 
-Qn(updater::CommonUpdater) = indepnoisematrix(dt(updater))
-
-
-
-"""
-Actualizador de la forma 
-```math
-x_{n+1} = \\mathcal{M}(x_n, p, t) + F w_n 
-```
-donde ``\\mathcal{M}`` es una dinámica posiblemente no lineal discretizada, ``p`` son parámetros 
-de la dinámica, ``t`` es tiempo, ``F`` una matriz constante de dispersión de ruido y 
-``w_n \\sim \\mathcal{N}(0, Q_n)``. Para simplificar, suponemos que ``Q_n = \\sqrt{\\Delta t} I``, 
-con ``I`` la matriz identidad.
-# Argumentos 
-- `makeF`: que recibe un argumento `filter_p` y retorna la matriz ``F`` de dispersión de ruido del modelo.
-- `discretizer`: guarda la dinámica de un problema continuo, discretizada por medio de algún método 
-numérico como Euler Progresivo, RungeKutta de orden 4, etc. 
-- `make_F`: función que recibe un argumento `filter_p` y produce una matriz de ruido.
-- `integrity`: luego de linealizar, se usa para mantener los estados en valores razonables. Es una función 
-de los estados ``x``.
-# Comentarios
-La diferencia con un `LinearizableUpdater` está en los parámetros, tanto de la dinámica como del filtro de 
-Kalman en sí. `CommonUpdater` está pensado como un actualizador para ser usado con varios filtros distintos, 
-cambiando ya sea los parámetros de la dinámica, o la matriz de dispersión de ruido del modelo del filtro de
-Kalman. Un `LinearizableUpdater`, en cambio, funciona con set de parámetros fijos. Es por ese mismo motivo
-que `CommonUpdater` no usa los `Discretizer`s normales, sino que usa `GeneralDiscretizer`.
-
-"""
-struct CommonUpdater{D <: GeneralDiscretizer, F1 <: Function, F2 <: Function} <: KalmanUpdaterWithGeneralDiscretizer
-    dims::Int
-    discretizer::D
-    makeF::F1
-    integrity::F2
-end 
-
-make_F(updater::CommonUpdater) = updater.makeF
-dimensions(updater::CommonUpdater) = updater.dims 
-dt(updater::CommonUpdater) = dt(updater.discretizer)
-
-make_noise(updater::CommonUpdater, filter_p) = Fn(updater, filter_p) * rand(Normal(0., sqrt(dt(updater))), dimensions(updater))
-
-function update_approximation(updater::CommonUpdater, hatx, p, t, filter_p)
-    updater.discretizer(hatx, 0., p, t) + make_noise(updater, filter_p)
-end 
-
-#==================================================
-Updater and estimation interactions 
-==================================================# 
-
-
-function forecast_state(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
-    update_approximation(updater, hatx(estimation), dynamic_params(estimation), t, filter_params(estimation))
-end 
-
-function forecast_hatP(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
-    M = Mn(updater, hatx(estimation), dynamic_params(estimation), t)
-    F = Fn(updater, filter_params(estimation))
-    M * hatP(estimation) * M' + F * Qn(updater) * F' 
-end 
-
-function forecast(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
-    hatPnp1 = forecast_hatP(updater, estimation, t)
-    hatxnp1 = forecast_state(updater, estimation, t)
-    ComponentArray(x = hatxnp1, P = hatPnp1)
-end
-
-function forecast_observed_state!(updater::CommonUpdater, estimation::SimpleKalmanEstimation, t)
-    Xₙ₊₁ₙ = forecast(updater, estimation, t)
-    set_next_hatX!(estimation, Xₙ₊₁ₙ)
-end  
-
-
-#==================================================
- General Observer 
-==================================================#
-
-"""
-Representa un observador lineal de la forma 
-"""
-struct CommonObserver{T <: AbstractFloat,M <: AbstractArray{T, 2} D <: GeneralDiscretizer, F1 <: Function, F2 <: Function} 
-    """Observation matrix"""
-    H::M
-    discretizer::D
-    """Función que recibe un argumento `filter_p` y produce una matriz de ruido."""
-    makeG::F1
-    integrity::F2
-    dt::T
-end 
-make_G(observer::CommonObserver) = observer.makeG
-#indepnoisematrix(dt) = sqrt(dt) * I
-
-Hn(observer::CommonObserver) = observer.H 
-#Dn(observer::CommonObserver, x, α, params, t) = jacobian_x(updater.discretizer, x, α, p, t) 
-Gn(observer::CommonObserver, filter_p) = make_G(observer)(filter_p) 
-Rn(observer::CommonObserver) = indepnoisematrix(observer.dt)
-
-state_dimension(observer::CommonObserver) = size(Hn(observer))[2]
-observation_dimension(observer::CommonObserver) = size(Hn(observer))[1]
-
-#make_noise(observer, filter_p) = Gn(observer, filter_p) * rand(zeros(state_dimension(observer)), Rn(observer))
-make_noise(observer::CommonObserver, filter_p) = Gn(observer, filter_p) * rand(Normal(0., sqrt(observer.dt)), state_dimension(observer))
-
-function observe_without_error(observer::CommonObserver, x)
-    Hn(observer) * x 
-end 
-
-function observe_with_error(observer::CommonObserver, x, filter_p)
-    observe_without_error(observer, x) + make_noise(observer, filter_p)
-end 
-
-En(observer::CommonObserver, hatPnp1n, filter_p) = Hn(observer) * hatPnp1n * Hn(observer)' + Gn(observer, filter_p) * Rn(observer) * Gn(observer, filter_p)' 
-KalmanGain(observer::CommonObserver, hatPnp1n, filter_p) = hatPnp1n * Hn(observer)' * inv(En(observer, hatPnp1n, filter_p))
-
-#==================================================
-Observer and estimation interactions 
-==================================================# 
-
-function observe_with_error(observer::CommonObserver, estimation::SimpleKalmanEstimation)
-    observe_with_error(observer, hatx(estimation), filter_params(estimation))
-end 
-
-function observe_forecasted_system(observer::CommonObserver, estimation::SimpleKalmanEstimation)
-    observe_without_error(observer, next_hatx(estimation))
-end
-
-function KalmanGain(observer::CommonObserver, estimation::SimpleKalmanEstimation)
-    KalmanGain(observer, next_hatP(estimation), filter_params(estimation)) 
-end
-
-function analyse_hatP(observer::CommonObserver, estimation::SimpleKalmanEstimation)
-    K = KalmanGain(observer, estimation)
-    (I - K * Hn(observer)) * next_hatP(estimation) * (I - K * Hn(iterator))'
-        + K * Gn(observer, filter_p) * Rn(observer) * Gn(observer, filter_p)' * K'
-end 
-
-function analyse_hatx(observer::CommonObserver, estimation::SimpleKalmanEstimation, observation)
-    next_hatx(estimation) + KalmanGain(observer, estimation) * (observation - observe_forecasted_system(observer, estimation))
-end
-
-
-#=
-Tengo dos tipos distintos de parámetros 
-Los que son parte de la dinámica `p``: γₑ, γᵢ, ect 
-Y los que son propios del filtro `filter_p`; lowpass_alpha, max_values, etc. 
-Necesito optimizar sobre ambos tipos...
-Podrían ser distintos para cada filtro! Cada uno corre sus propias covarianzas y sus propios modelos.
-Y así hay que encontrar sentido en medio de toda es confusión xDDD 
-Es un desastre.
-
-Updater necesita saber construir un Rn, Bn, etc, a partir de los parámetros del filtro.
-Voy a dejar de lado Bn, no lo voy a usar (== 0 siempre). 
-Supondré que Rn es dado (de hecho, con saber el dt debería suponer ruido independiente sqrt(dt)
-y el dt viene del discretizador.)
-
-Fn sí que depende de filter_p. Necesito una función tipo: 
-make_F(filter_p). Esa función debe estar dentro de updater.
-=#
-
-#=
-Observer tiene una matriz de observación H fija para cada filtro de kalman 
-El ruido de observación depende de filter_p
-=#
