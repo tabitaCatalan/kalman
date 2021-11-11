@@ -64,29 +64,68 @@ function set_hatX_with_lowpass!(estimator::SimpleKalmanEstimation, hatx, hatP)
     set_hatX!(estimator, newhatx, hatP)
 end 
 
-function set_hatX_with_lowpass!(mmkf::MultipleModelKalman, model_index, hatx, hatP)
-    set_hatX_with_lowpass!(get_model(mmkf, model_index), hatx, hatP)
-end 
-#=
-usando un kalman discretizer es posible calcular next_hatX a partir de next_hatX
-=# 
+#========================================================
+MultipleModelKalman:
+Contiene toda la información de las distintas estimaciones, 
+los parámetros que usa cada una y cómo mezclarlas para
+hacer una estimación.
+========================================================#
 
-struct MultipleModelKalman{CU <: CommonUpdater, CO <: CommonObserver, Sys <: KalmanFilter.Measurements} # <: KalmanIterator
-    # lista de probabilidades
-    priors # array 
-    models # array de SimpleKalmanEstimation 
+"""
+$(TYPEDEF)
+
+Contains all the necessary information to run `N` kalman filter estimations, 
+each with different parameters, and combine the estimations in a bayesian way.
+
+``\\hat{x}_{kj}`` is the ``j``-th estimation at ``k``-th iteration. Uses ``p_j`` 
+parameters. This parameters can be of the dynamics (e.g. rates of transmision 
+in an epidemiological model) or of the filter (initial convariance, noise matrix, 
+etc). Every iteration updater the priors and the estimations when receiving new 
+observations ``y_k``.
+"""
+struct MultipleModelKalman{T <: AbstractFloat,
+                           Pr <:AbstractVector{T}, 
+                           Ms <: AbstractVector{M} where M <: SimpleKalmanEstimation,
+                           CU <: CommonUpdater,
+                           CO <: CommonObserver,
+                           Sys <: KalmanFilter.Measurements} # <: KalmanIterator
+    """`prior[j]` correspond to ``\\mathbb{P}(p_{j}| y_{k})``. Inicialization 
+    ``\\mathbb{P}(p_{j}| y_{0})`` correspond to an *a priori* probability, setted before
+    seing any observation."""
+    priors::Pr 
+    """Vector of `SimpleKalmanEstimation`s."""
+    models::Ms 
+    """A `CommonUpdater`. The same is used when updating and forecasting every estimation, 
+    so it needs to receive the parameters."""
     updater::CU
+    """A `CommonObserver`. The same is used when observing every estimation, 
+    so it needs to receive the parameters."""
     observer::CO
+    """A `Measurements` element with all the observations."""
     system::Sys
-    n # numero de iteracion, o tiempo, etc 
+    """`k` correspond to the ``k``-th iteration."""
+    k::int 
 end 
-# tn(mmkf::MultipleModelKalman) TODO 
 
+#===== Getters y setters =====#
 how_many_models(mmkf::MultipleModelKalmanFilter) = length(mmkf.priors)
 enumerate_models(mmkf::MultipleModelKalman) = 1:how_many_models(mmkf)
 
 get_prior(mmkf::MultipleModelKalman, model_index) = mmkf.priors[model_index]
 get_model(mmkf::MultipleModelKalman, model_index) = mmkf.models[model_index]
+
+
+function set_hatX_with_lowpass!(mmkf::MultipleModelKalman, model_index, hatx, hatP)
+    set_hatX_with_lowpass!(get_model(mmkf, model_index), hatx, hatP)
+end 
+
+next_hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatx)
+next_hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatP)
+hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatx)
+hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatP)
+
+tn(iterator) = iterator.k * dt(iterator.updater)
+
 
 """
 - `estimator::Function`: que actúa en `SimpleKalmanEstimation`
@@ -124,14 +163,6 @@ function probability_p_given_observation(mmkf::MultipleModelKalman, observation)
     auxvec = [probability_observation_given_p(mmkf, observation, model) * get_prior(mmfk, model) for model in enumerate_models(mmkf)]
     auxvec ./ sum(auxvec)
 end 
-
-
-next_hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatx)
-next_hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatP)
-hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatx)
-hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatP)
-
-tn(iterator) = iterator.n * dt(iterator.updater)
 
 """
 - `method`: las opciones son `:maxprob`, `:weighted`
