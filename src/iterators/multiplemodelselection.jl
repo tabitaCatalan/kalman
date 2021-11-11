@@ -309,7 +309,20 @@ function observe_with_error(observer::CommonObserver, x, filter_p)
     observe_without_error(observer, x) + make_noise(observer, filter_p)
 end 
 
+#==================================================
+Observer and estimation interactions 
+==================================================# 
+
+function observe_with_error(observer::CommonObserver, estimation::SimpleKalmanEstimation)
+    observe_with_error(observer, hatx(estimation), filter_params(estimation))
 end 
+
+function observe_forecasted_system(observer::CommonObserver, estimation::SimpleKalmanEstimation)
+    observe_without_error(observer, next_hatx(estimation))
+end
+
+
+
 
 #=
 Tengo dos tipos distintos de parámetros 
