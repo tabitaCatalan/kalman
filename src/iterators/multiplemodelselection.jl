@@ -235,7 +235,13 @@ end
 
 make_F(updater::CommonUpdater) = updater.makeF
 dimensions(updater::CommonUpdater) = updater.dims 
+dt(updater::CommonUpdater) = dt(updater.discretizer)
 
+make_noise(updater::CommonUpdater, filter_p) = Fn(updater, filter_p) * rand(Normal(0., sqrt(dt(updater))), dimensions(updater))
+
+function update_approximation(updater::CommonUpdater, hatx, p, t, filter_p)
+    updater.discretizer(hatx, 0., p, t) + make_noise(updater, filter_p)
+end 
 
 #==================================================
  General Observer 
