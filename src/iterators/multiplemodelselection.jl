@@ -22,6 +22,7 @@ Una forma de actualizar las probabilidades.
 using KalmanFilter
 using StaticArrays
 using LinearAlgebra: Diagonal, I
+using Distributions: MvNormal, Normal
 
 # No es exactamente un iterador, no tiene updater ni nada 
 struct SimpleKalmanEstimation{P,CA1 <: ComponentArray, CA2 <: ComponentArray} 
@@ -277,12 +278,37 @@ end
 """
 Representa un observador lineal de la forma 
 """
-struct CommonObserver{D <: GeneralDiscretizer, F1 <: Function, F2 <: Function} <: KalmanUpdaterWithGeneralDiscretizer
+struct CommonObserver{T <: AbstractFloat,M <: AbstractArray{T, 2} D <: GeneralDiscretizer, F1 <: Function, F2 <: Function} 
     """Observation matrix"""
-    H
+    H::M
     discretizer::D
-    makeF::F1
+    """Función que recibe un argumento `filter_p` y produce una matriz de ruido."""
+    makeG::F1
     integrity::F2
+    dt::T
+end 
+make_G(observer::CommonObserver) = observer.makeG
+#indepnoisematrix(dt) = sqrt(dt) * I
+
+Hn(observer::CommonObserver) = observer.H 
+#Dn(observer::CommonObserver, x, α, params, t) = jacobian_x(updater.discretizer, x, α, p, t) 
+Gn(observer::CommonObserver, filter_p) = make_G(observer)(filter_p) 
+Rn(observer::CommonObserver) = indepnoisematrix(observer.dt)
+
+state_dimension(observer::CommonObserver) = size(Hn(observer))[2]
+observation_dimension(observer::CommonObserver) = size(Hn(observer))[1]
+
+#make_noise(observer, filter_p) = Gn(observer, filter_p) * rand(zeros(state_dimension(observer)), Rn(observer))
+make_noise(observer::CommonObserver, filter_p) = Gn(observer, filter_p) * rand(Normal(0., sqrt(observer.dt)), state_dimension(observer))
+
+function observe_without_error(observer::CommonObserver, x)
+    Hn(observer) * x 
+end 
+
+function observe_with_error(observer::CommonObserver, x, filter_p)
+    observe_without_error(observer, x) + make_noise(observer, filter_p)
+end 
+
 end 
 
 #=
