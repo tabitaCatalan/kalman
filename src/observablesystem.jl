@@ -46,6 +46,10 @@ get_index(ms::Measurements, t) = min(approxfloor(t / ms.dt) + 1, number_of_measu
 
 function update_real_state!(ms::Measurements, updater::KalmanUpdater, control, t) end 
   
+function observe_real_state(ms::Measurements, t)
+    ms.measurements[get_index(ms, t), :]
+end
+
 function observe_real_state(ms::Measurements, observer::KalmanObserver, control, t)
     ms.measurements[get_index(ms, t), :]
 end
