@@ -122,16 +122,34 @@ function forecast(iterator::SimpleKalmanIterator, control)
     forecast(iterator.updater, hatx(iterator), hatP(iterator), control, tn(iterator))
 end
 =#
-function forecast(mmkf::MultipleModelKalman, control)
-    # esto es muy largo, pero incluye hacer forecast a cada 
-    # uno de los filtros y luego combinarlo
+
+#===================================================
+KalmanIterator interface 
+===================================================#
+function update_inner_state!(mmkf::MultipleModelKalman, control)
+
+end 
+
+function forecast_observed_state!(mmkf::MultipleModelKalman, control)
+    # si guardara una estimación de next_hatX este seria el momento de actualizarla,
+    # pero no lo hago, solo actualizo las de los modelos internos
+    updater = mmkf.updater 
+    for model in enumerate_models(mmkf)
+        forecast_observed_state!(updater, get_model(mmkf, model), tn(mmkf))
+    end 
 end
 
-function forecast!(updater::KalmanFilter.LinearizableUpdater, estimation::SimpleKalmanEstimation, control, t)
-    hatXₙ = hatX(estimation)
-    hatXₙ₊₁ = KalmanFilter.forecast(updater::KalmanFilter.LinearizableUpdater, hatXₙ.x, hatXₙ.P, control, estimation.p, t)
-    set_hatX!(estimator, hatXₙ₊₁)
-end 
+function observe_inner_system(mmkf::MultipleModelKalman)
+    observe_real_state(mmkf.system)
+end   
+
+function analyse!(mmkf::MultipleModelKalman, yₙ₊₁) end 
+
+function update_updater!(mmkf::MultipleModelKalman) end 
+
+function advance_counter!(mmkf::MultipleModelKalman) end 
+
+
 
 #=
 Qué necesita un Updater 
