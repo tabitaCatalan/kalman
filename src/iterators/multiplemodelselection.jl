@@ -76,8 +76,11 @@ enumerate_models(mmkf::MultipleModelKalman) = 1:how_many_models(mmkf)
 get_prior(mmkf::MultipleModelKalman, model_index) = mmkf.priors[model_index]
 get_model(mmkf::MultipleModelKalman, model_index) = mmkf.models[model_index]
 
-function mix_estimation(mmkf::MultipleModelKalman)
-    sum(get_prior(mmkf,i) * hatx(get_model(mmkf, i)) for i in enumerate_models(mmkf))
+"""
+- `estimator::Function`: que actúa en `SimpleKalmanEstimation`
+"""
+function mix_estimation(mmkf::MultipleModelKalman, estimator::Function)
+    sum(get_prior(mmkf,i) * estimator(get_model(mmkf, i)) for i in enumerate_models(mmkf))
 end 
 function mix_covariances(mmkf::MultipleModelKalman)
     sum(get_prior(mmkf, i) * hatP(get_model(mmkf, i)) for i in enumerate_models(mmkf))
@@ -106,6 +109,12 @@ function probability_p_given_observation(mmkf::MultipleModelKalman, observation,
     auxvec = [probability_observation_given_p(mmkf, observation, model) * get_prior(mmfk, model) for model in enumerate_models(mmkf)]
     auxvec ./ sum(auxvec)
 end 
+
+
+next_hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatx)
+next_hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatP)
+hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatx)
+hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatP)
 
 """
 - `method`: las opciones son `:maxprob`, `:weighted`
