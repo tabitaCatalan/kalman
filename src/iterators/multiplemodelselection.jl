@@ -168,11 +168,20 @@ function observe_inner_system(mmkf::MultipleModelKalman)
     observe_real_state(mmkf.system)
 end   
 
-function analyse!(mmkf::MultipleModelKalman, yₙ₊₁) end 
+function analyse!(mmkf::MultipleModelKalman, yₙ₊₁)
+    update_priors!(mmkf,  probability_p_given_observation(mmkf, yₙ₊₁))
+    for model_index in enumerate_models(mmkf)
+        hatPₙ₊₁ₙ₊₁ = analyse_hatP(mmkf, model_index)
+        hatxₙ₊₁ₙ₊₁ = analyse_hatx(mmkf, model_index, yₙ₊₁)
+        set_hatX_with_lowpass!(mmkf, model_index, hatxₙ₊₁ₙ₊₁, hatPₙ₊₁ₙ₊₁)
+    end
+end 
 
 function update_updater!(mmkf::MultipleModelKalman) end 
 
 function advance_counter!(mmkf::MultipleModelKalman) end 
+analyse_hatP(mmkf::MultipleModelKalman, model_index) = analyse_hatP(mmkf.observer, get_model(mmkf, model_index))
+analyse_hatx(mmkf::MultipleModelKalman, model_index, observation) = analyse_hatx(mmkf.observer, get_model(mmkf, model_index), observation)
 
 
 
@@ -333,6 +342,9 @@ function observe_with_error(observer::CommonObserver, x, filter_p)
     observe_without_error(observer, x) + make_noise(observer, filter_p)
 end 
 
+En(observer::CommonObserver, hatPnp1n, filter_p) = Hn(observer) * hatPnp1n * Hn(observer)' + Gn(observer, filter_p) * Rn(observer) * Gn(observer, filter_p)' 
+KalmanGain(observer::CommonObserver, hatPnp1n, filter_p) = hatPnp1n * Hn(observer)' * inv(En(observer, hatPnp1n, filter_p))
+
 #==================================================
 Observer and estimation interactions 
 ==================================================# 
@@ -345,7 +357,19 @@ function observe_forecasted_system(observer::CommonObserver, estimation::SimpleK
     observe_without_error(observer, next_hatx(estimation))
 end
 
+function KalmanGain(observer::CommonObserver, estimation::SimpleKalmanEstimation)
+    KalmanGain(observer, next_hatP(estimation), filter_params(estimation)) 
+end
 
+function analyse_hatP(observer::CommonObserver, estimation::SimpleKalmanEstimation)
+    K = KalmanGain(observer, estimation)
+    (I - K * Hn(observer)) * next_hatP(estimation) * (I - K * Hn(iterator))'
+        + K * Gn(observer, filter_p) * Rn(observer) * Gn(observer, filter_p)' * K'
+end 
+
+function analyse_hatx(observer::CommonObserver, estimation::SimpleKalmanEstimation, observation)
+    next_hatx(estimation) + KalmanGain(observer, estimation) * (observation - observe_forecasted_system(observer, estimation))
+end
 
 
 #=
