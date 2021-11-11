@@ -94,11 +94,14 @@ get_model(mmkf::MultipleModelKalman, model_index) = mmkf.models[model_index]
 function mix_estimation(mmkf::MultipleModelKalman, estimator::Function)
     sum(get_prior(mmkf,i) * estimator(get_model(mmkf, i)) for i in enumerate_models(mmkf))
 end 
-function mix_covariances(mmkf::MultipleModelKalman)
-    sum(get_prior(mmkf, i) * hatP(get_model(mmkf, i)) for i in enumerate_models(mmkf))
-end 
 
-function update_priors!(mmkf::MultipleModelKalman)end 
+function update_priors!(mmkf::MultipleModelKalman, new_priors)
+    if length(new_priors) == how_many_models(mmkf)
+        mmkf.priors .= new_priors
+    else 
+        print("Trying to assign incorrect ammount of priors to MultipleModelKalman")
+    end
+end 
 
 gaussian_pdf(x, P) 
 
