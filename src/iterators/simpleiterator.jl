@@ -83,7 +83,7 @@ end
 
 isLinearizable(iterator::SimpleKalmanIterator) = isLinearizableUpdater(iterator.updater) && isLinearizableObserver(iterator.observer)
 
-tn(iterator) = iterator.n * dt(iterator.updater)
+tn(iterator::SimpleKalmanIterator) = iterator.n * dt(iterator.updater)
 
 function update_inner_state!(iterator::SimpleKalmanIterator, control)
   update_real_state!(iterator.system, iterator.updater, control, tn(iterator))
@@ -110,7 +110,7 @@ function lowpass(iterator::SimpleKalmanIterator, hatx_new)
 end
 
 function observe_forecasted_system(iterator::SimpleKalmanIterator)
-  iterator.observer(next_hatx(iterator), un(iterator), 0.)
+  observe_without_error(iterator.observer, next_hatx(iterator), un(iterator))
 end
 
 # Getters de matrices y fórmulas para actualizar y todo eso

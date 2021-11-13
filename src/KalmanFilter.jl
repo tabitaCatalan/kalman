@@ -21,4 +21,6 @@ include(joinpath("iterators","enkfiterator.jl"))
 include(joinpath("updaters","contdiscretmomentum.jl"))
 include(joinpath("updaters","odeupdater.jl"))
 include("filteredseries.jl")
+
+include(joinpath("iterators", "multiplemodelselection.jl"))
 end # module
