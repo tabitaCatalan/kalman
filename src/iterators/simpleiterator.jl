@@ -83,7 +83,7 @@ end
 
 isLinearizable(iterator::SimpleKalmanIterator) = isLinearizableUpdater(iterator.updater) && isLinearizableObserver(iterator.observer)
 
-tn(iterator) = iterator.n * dt(iterator.updater)
+tn(iterator::SimpleKalmanIterator) = iterator.n * dt(iterator.updater)
 
 function update_inner_state!(iterator::SimpleKalmanIterator, control)
   update_real_state!(iterator.system, iterator.updater, control, tn(iterator))

@@ -19,12 +19,11 @@ Una forma de usar las probabilidades para mezclar los estados y todo eso.
 Una forma de actualizar las probabilidades. 
 =# 
 
-using KalmanFilter
 using StaticArrays
-using LinearAlgebra: Diagonal, I
+using LinearAlgebra: Diagonal, I, det, inv
 using Distributions: MvNormal, Normal
 using DocStringExtensions 
-
+using ComponentArrays 
 #========================================================
 Auxs functions 
 ========================================================#
@@ -38,6 +37,9 @@ Estimaciones de los distintos filtros
 ========================================================#
 
 # No es exactamente un iterador, no tiene updater ni nada 
+"""
+$(FIELDS)
+"""
 struct SimpleKalmanEstimation{P,CA1 <: ComponentArray, CA2 <: ComponentArray} 
     """Parameters. Have 2 components: filter_p (filter) and p (dynamics)."""
     params::P
@@ -67,13 +69,14 @@ end
 
 dynamic_params(estimation::SimpleKalmanEstimation) = estimation.params.p
 filter_params(estimation::SimpleKalmanEstimation) = estimation.params.filter_p
+params(estimation::SimpleKalmanEstimation) = estimation.params
 
 # make_lowpassalpha(filter_p) esta función debe estar en estimation,
 # o debe recibirse o estar definida en algun lado 
 make_lowpassalpha(estimator::SimpleKalmanEstimation) = make_lowpassalpha(filter_params(estimator))
 
 function set_hatX_with_lowpass!(estimator::SimpleKalmanEstimation, hatx, hatP)
-    newhatx = KalmanFilter.lowpass(hatx(estimator), hatx, make_lowpassalpha(estimator))
+    newhatx = lowpass(hatx(estimator), hatx, make_lowpassalpha(estimator))
     set_hatX!(estimator, newhatx, hatP)
 end 
 
@@ -81,10 +84,14 @@ end
 GeneralDiscretizer:
 Un discretizador que necesita recibir los parámetros p de la 
 dinámica (a diferencia del frecuentemente utilizado
-`KalmanFilter.Discretizer`. 
+`Discretizer`. 
+No es un `Discretizer` porque no comparten la 
+misma interfaz.
 ========================================================#
-
-abstract type GeneralDiscretizer <: KalmanFilter.Discretizer end
+"""
+Reciben funciones `f` y `Dxf` con las entradas `(x, α, p, t)`.
+"""
+abstract type GeneralDiscretizer end
 
 function (::GeneralDiscretizer)(x,α,p,t) error("No se ha definido un método para este discretizador.") end
 function jacobian_x(ds::GeneralDiscretizer, x, α, p, t) error("No se ha definido método jacobian_x para este discretizador.")  end
@@ -95,7 +102,10 @@ GeneralRK4:
 Un general discretizer usando el método RungeKutta de orden 4.
 ========================================================#
 
-"""No almacena parámmetros, así que debe dársele uno al pedir que discretize."""
+"""
+$(TYPEDEF)
+No almacena parámmetros, así que debe dársele uno al pedir que discretize.
+"""
 struct GeneralRK4{F1 <: Function, F2 <: Function, T} <: GeneralDiscretizer
     """
     La función tal que ``x' = f(x,\\alpha, p, t)``, donde ``x`` es el estado,
@@ -108,13 +118,13 @@ struct GeneralRK4{F1 <: Function, F2 <: Function, T} <: GeneralDiscretizer
     dt::T
   end
 
-(rk::GeneralRK4)(x, α, p, t) = KalmanFilter.rungekutta_predict(rk.f, x, α, p, t, rk.dt)
-jacobian_x(rk::GeneralRK4, x, α, p, t) = KalmanFilter.rungekutta_jacobian_x(rk.f, rk.Dxf, x, α, p, t, rk.dt)
-
+(rk::GeneralRK4)(x, α, p, t) = rungekutta_predict(rk.f, x, α, p, t, rk.dt)
+jacobian_x(rk::GeneralRK4, x, α, p, t) = rungekutta_jacobian_x(rk.f, rk.Dxf, x, α, p, t, rk.dt)
+dt(rk::GeneralRK4) = rk.dt
 #========================================================
 CommonUpdater:
 Un actualizador (no lineal) que puede usar GeneralDiscretizers. 
-No es un KalmanFilter.Updater porque no comparten la misma interfaz.
+No es un Updater porque no comparten la misma interfaz.
 ========================================================#
 
 """
@@ -196,7 +206,7 @@ end
 CommonObserver
 Un observador que requiere de algunos parámetros para 
 funcionar.
-No es un KalmanFilter.KalmanObserver porque no comparten 
+No es un KalmanObserver porque no comparten 
 la misma interfaz.
 ========================================================#
 
@@ -254,8 +264,8 @@ end
 
 function analyse_hatP(observer::CommonObserver, estimation::SimpleKalmanEstimation)
     K = KalmanGain(observer, estimation)
-    (I - K * Hn(observer)) * next_hatP(estimation) * (I - K * Hn(iterator))'
-        + K * Gn(observer, filter_p) * Rn(observer) * Gn(observer, filter_p)' * K'
+    (I - K * Hn(observer)) * next_hatP(estimation) * (I - K * Hn(observer))'
+        + K * Gn(observer, filter_params(estimation)) * Rn(observer) * Gn(observer, filter_params(estimation))' * K'
 end 
 
 function analyse_hatx(observer::CommonObserver, estimation::SimpleKalmanEstimation, observation)
@@ -281,12 +291,12 @@ in an epidemiological model) or of the filter (initial convariance, noise matrix
 etc). Every iteration updater the priors and the estimations when receiving new 
 observations ``y_k``.
 """
-struct MultipleModelKalman{T <: AbstractFloat,
+mutable struct MultipleModelKalman{T <: AbstractFloat,
                            Pr <:AbstractVector{T}, 
                            Ms <: AbstractVector{M} where M <: SimpleKalmanEstimation,
                            CU <: CommonUpdater,
                            CO <: CommonObserver,
-                           Sys <: KalmanFilter.Measurements} # <: KalmanIterator
+                           Sys <: Measurements}  <: KalmanIterator
     """`prior[j]` correspond to ``\\mathbb{P}(p_{j}| y_{k})``. Inicialization 
     ``\\mathbb{P}(p_{j}| y_{0})`` correspond to an *a priori* probability, setted before
     seing any observation."""
@@ -302,11 +312,11 @@ struct MultipleModelKalman{T <: AbstractFloat,
     """A `Measurements` element with all the observations."""
     system::Sys
     """`k` correspond to the ``k``-th iteration."""
-    k::int 
+    k::Int 
 end 
 
 #===== Getters y setters =====#
-how_many_models(mmkf::MultipleModelKalmanFilter) = length(mmkf.priors)
+how_many_models(mmkf::MultipleModelKalman) = length(mmkf.priors)
 enumerate_models(mmkf::MultipleModelKalman) = 1:how_many_models(mmkf)
 
 get_prior(mmkf::MultipleModelKalman, model_index) = mmkf.priors[model_index]
@@ -316,13 +326,16 @@ get_model(mmkf::MultipleModelKalman, model_index) = mmkf.models[model_index]
 function set_hatX_with_lowpass!(mmkf::MultipleModelKalman, model_index, hatx, hatP)
     set_hatX_with_lowpass!(get_model(mmkf, model_index), hatx, hatP)
 end 
+function set_hatX!(mmkf::MultipleModelKalman, model_index, hatx, hatP)
+    set_hatX!(get_model(mmkf, model_index), hatx, hatP)
+end 
 
 next_hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatx)
 next_hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, next_hatP)
 hatx(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatx)
 hatP(mmkf::MultipleModelKalman) = mix_estimation(mmkf, hatP)
 
-tn(iterator) = iterator.k * dt(iterator.updater)
+tn(mmkf::MultipleModelKalman) = mmkf.k * dt(mmkf.updater)
 
 
 """
@@ -340,25 +353,25 @@ function update_priors!(mmkf::MultipleModelKalman, new_priors)
     end
 end 
 
-gaussian_pdf(x, P) 
+gaussian_pdf(x, P) = exp(-x' * inv(P) * x/2) / ((2π)^(length(x)/2) * √(det(P))) 
 
 function probability_observation_given_p(
-    observer::KalmanFilter.LinearizableObserver,
+    observer::CommonObserver,
     estimation::SimpleKalmanEstimation,
     observation)
-    r = observation - KalmanFilter.observe_without_error(observer, hatx(estimation))
-    S = Hn(observer) * hatP(estimation) * Hn(observer)' + Rn(observer)
-    gaussian_pdf(r, S)
+    r = observation - observe_without_error(observer, hatx(estimation))   
+    E = En(observer, hatP(estimation), filter_params(estimation))
+    gaussian_pdf(r, E)
 end 
 
 function probability_observation_given_p(
     mmkf::MultipleModelKalman,
     observation, model)
-    probability_observation_given_p(mmkf.observer, mmkf.model[model], observation)
+    probability_observation_given_p(mmkf.observer, get_model(mmkf, model), observation)
 end 
 
 function probability_p_given_observation(mmkf::MultipleModelKalman, observation)
-    auxvec = [probability_observation_given_p(mmkf, observation, model) * get_prior(mmfk, model) for model in enumerate_models(mmkf)]
+    auxvec = [probability_observation_given_p(mmkf, observation, model) * get_prior(mmkf, model) for model in enumerate_models(mmkf)]
     auxvec ./ sum(auxvec)
 end 
 
@@ -367,19 +380,17 @@ end
 """
 function parameter_estimation(mmkf::MultipleModelKalman, method)
     if method == :weighted 
-        sum(get_prior(mmkf, i) * mmkf.model[i].p for i in enumerate_models(mmkf))
+        sum(get_prior(mmkf, i) * params(get_model(mmkf, i)) for i in enumerate_models(mmkf))
     elseif method == :maxprob 
-        maxval, maxindx = findmax(get_prior(mmkf, i) for i in enumerate_models(mmkf))
-        mmkf.model[maxindx].p
+        maxval, maxindx = findmax([get_prior(mmkf, i) for i in enumerate_models(mmkf)])
+        params(get_model(mmkf, maxindx))
     end 
 end 
 
 #===================================================
 KalmanIterator interface 
 ===================================================#
-function update_inner_state!(mmkf::MultipleModelKalman, control)
-
-end 
+function update_inner_state!(mmkf::MultipleModelKalman, control)end 
 
 function forecast_observed_state!(mmkf::MultipleModelKalman, control)
     # si guardara una estimación de next_hatX este seria el momento de actualizarla,
@@ -392,7 +403,7 @@ function forecast_observed_state!(mmkf::MultipleModelKalman, control)
 end
 
 function observe_inner_system(mmkf::MultipleModelKalman)
-    observe_real_state(mmkf.system)
+    observe_real_state(mmkf.system, tn(mmkf))
 end   
 
 function analyse!(mmkf::MultipleModelKalman, yₙ₊₁)
@@ -400,13 +411,14 @@ function analyse!(mmkf::MultipleModelKalman, yₙ₊₁)
     for model_index in enumerate_models(mmkf)
         hatPₙ₊₁ₙ₊₁ = analyse_hatP(mmkf, model_index)
         hatxₙ₊₁ₙ₊₁ = analyse_hatx(mmkf, model_index, yₙ₊₁)
-        set_hatX_with_lowpass!(mmkf, model_index, hatxₙ₊₁ₙ₊₁, hatPₙ₊₁ₙ₊₁)
+        #set_hatX_with_lowpass!(mmkf, model_index, hatxₙ₊₁ₙ₊₁, hatPₙ₊₁ₙ₊₁)
+        set_hatX!(mmkf, model_index, hatxₙ₊₁ₙ₊₁, hatPₙ₊₁ₙ₊₁)
     end
 end 
 
 function update_updater!(mmkf::MultipleModelKalman) end 
 
-function advance_counter!(mmkf::MultipleModelKalman) mmkf.n += 1 end 
+function advance_counter!(mmkf::MultipleModelKalman) mmkf.k += 1 end 
 
 analyse_hatP(mmkf::MultipleModelKalman, model_index) = analyse_hatP(mmkf.observer, get_model(mmkf, model_index))
 analyse_hatx(mmkf::MultipleModelKalman, model_index, observation) = analyse_hatx(mmkf.observer, get_model(mmkf, model_index), observation)
